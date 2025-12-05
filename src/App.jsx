@@ -11,6 +11,27 @@ const sectionTransition = {
   ease: "easeOut",
 };
 
+/* ---------- Reusable Spinning World Globe (clear world map) ---------- */
+
+function SpinningGlobe({ sizeClass = "w-16 h-16" }) {
+  return (
+    <div className="relative flex items-center justify-center">
+      <div
+        className={`relative flex items-center justify-center rounded-full bg-gradient-to-br from-sky-400 via-sky-500 to-blue-900 shadow-lg shadow-sky-500/40 ${sizeClass} animate-spin`}
+        // full 360° spin every 4 seconds
+        style={{ animationDuration: "4s" }}
+      >
+        {/* subtle glow behind */}
+        <div className="absolute inset-0 rounded-full bg-sky-300/15 blur-xl" />
+        {/* world map emoji as the visible globe */}
+        <span className="relative text-3xl sm:text-4xl">
+          🌎
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [introDone, setIntroDone] = useState(false);
@@ -34,6 +55,7 @@ export default function App() {
     { id: "services", label: "Services" },
     { id: "systems", label: "Systems" },
     { id: "apps", label: "Apps" },
+    { id: "ai", label: "AI" },
     { id: "portfolio", label: "Portfolio" },
     { id: "process", label: "Process" },
     { id: "pricing", label: "Pricing" },
@@ -59,17 +81,17 @@ export default function App() {
             className="flex items-center gap-2 group"
           >
             <div className="relative">
-              <div className="absolute inset-0 rounded-2xl bg-primary/40 blur-md opacity-0 group-hover:opacity-100 transition" />
-              <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-xl font-bold shadow-lg shadow-primary/30">
-                CT
+              <div className="absolute inset-0 rounded-full bg-primary/30 blur-md opacity-0 group-hover:opacity-100 transition" />
+              <div className="relative flex items-center justify-center">
+                <SpinningGlobe sizeClass="w-9 h-9" />
               </div>
             </div>
             <div className="leading-tight text-left">
               <div className="font-semibold text-sm sm:text-base">
-                Cristian D Toussaint
+                Toussaint IT System Development
               </div>
-              <div className="text-xs text-slate-400">
-                Web Dev • SEO • Systems • Apps
+              <div className="text-[11px] text-slate-400">
+                Web &amp; App &amp; SEO
               </div>
             </div>
           </button>
@@ -132,7 +154,8 @@ export default function App() {
         <Hero />
         <Services />
         <Systems />
-        <Apps /> {/* NEW apps section */}
+        <Apps />
+        <AISection />
         <Portfolio />
         <Process />
         <Pricing />
@@ -160,15 +183,13 @@ export default function App() {
 
       {/* Intro overlay */}
       <AnimatePresence>
-        {!introDone && (
-          <IntroOverlay onDone={() => setIntroDone(true)} />
-        )}
+        {!introDone && <IntroOverlay onDone={() => setIntroDone(true)} />}
       </AnimatePresence>
     </div>
   );
 }
 
-/* ---------- Intro Overlay ---------- */
+/* ---------- Intro Overlay (brand + spinning globe) ---------- */
 
 function IntroOverlay({ onDone }) {
   useEffect(() => {
@@ -205,20 +226,27 @@ function IntroOverlay({ onDone }) {
         animate={{ opacity: 1, y: 0 }}
         transition={sectionTransition}
       >
-        <p className="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">
-          Cristian D Toussaint • Web Dev • SEO • Systems • Apps
-        </p>
+        <div className="mb-4 flex flex-col items-center">
+          <SpinningGlobe sizeClass="w-20 h-20" />
+          <p className="mt-3 text-xs uppercase tracking-[0.24em] text-slate-300">
+            Toussaint IT System Development
+          </p>
+          <p className="text-[11px] text-slate-400 tracking-[0.18em]">
+            WEB &amp; APP &amp; SEO
+          </p>
+        </div>
+
         <motion.h1
           className="text-3xl sm:text-4xl font-semibold mb-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
         >
-          Building{" "}
-          <span className="text-primary">websites, systems</span> &{" "}
-          <span className="text-accent">apps</span> that feel{" "}
-          <span className="text-primary">modern</span> and{" "}
-          <span className="text-accent">perform</span>.
+          One studio for{" "}
+          <span className="text-primary">websites</span>,{" "}
+          <span className="text-accent">apps</span>,{" "}
+          <span className="text-primary">SEO</span> &amp;{" "}
+          <span className="text-accent">systems</span>.
         </motion.h1>
         <motion.p
           className="text-sm text-slate-300 mb-6"
@@ -226,8 +254,9 @@ function IntroOverlay({ onDone }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
         >
-          A single partner for web, SEO, cloud, and cross-platform apps.
-          Crafted to load fast, convert visitors, and scale with your business.
+          Toussaint IT System Development is your partner for modern interfaces,
+          search visibility, cloud systems and cross-platform apps—all
+          connected, all performance-first.
         </motion.p>
         <motion.div
           className="flex flex-wrap justify-center gap-3 mb-6"
@@ -236,11 +265,11 @@ function IntroOverlay({ onDone }) {
           transition={{ delay: 0.7, duration: 0.8 }}
         >
           {[
-            "React & Next.js",
-            "Node / APIs",
-            "Postgres / MongoDB",
-            "Vercel / AWS / GCP",
-            "iOS & Android apps",
+            "Web apps & landing pages",
+            "iOS & Android (React Native)",
+            "SEO strategy & on-page",
+            "Cloud & databases",
+            "AI features & automation",
           ].map((chip) => (
             <span
               key={chip}
@@ -296,13 +325,13 @@ function Hero() {
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"></span>
               <span>
-                Web Development • SEO • Systems • Cloud • iOS & Android
+                Toussaint IT System Development • Web &amp; App &amp; SEO
               </span>
             </div>
 
             <h1 className="mb-4 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
               Modern websites,{" "}
-              <span className="text-primary">apps</span> &{" "}
+              <span className="text-primary">apps</span> &amp;{" "}
               <span className="text-accent">systems</span> that perform and
               rank.
             </h1>
@@ -310,7 +339,7 @@ function Hero() {
             <p className="mb-6 max-w-xl text-sm text-slate-300 sm:text-base">
               I build fast, conversion-focused websites, cross-platform apps,
               SEO strategies that actually move the needle, and full systems
-              with databases and cloud infrastructure. One partner for your
+              with databases, cloud, and AI workflows. One partner for your
               whole digital stack.
             </p>
 
@@ -332,7 +361,7 @@ function Hero() {
             <div className="flex flex-wrap gap-6 text-xs text-slate-400">
               <Stat label="+3 yrs" sub="Building and optimizing experiences" />
               <Stat label="Core Web Vitals" sub="Performance-focused builds" />
-              <Stat label="Web • Apps • Cloud" sub="End-to-end systems" />
+              <Stat label="Web • Apps • AI" sub="End-to-end systems" />
             </div>
 
             <div className="mt-6 flex flex-wrap gap-2 text-[11px] text-slate-300">
@@ -342,6 +371,7 @@ function Hero() {
                 "Node & APIs",
                 "Postgres / MongoDB",
                 "Vercel / AWS / GCP",
+                "SEO & AI flows",
               ].map((chip) => (
                 <span
                   key={chip}
@@ -387,7 +417,7 @@ function HeroCard() {
             <div>
               <div className="text-xs text-slate-400">Current focus</div>
               <div className="text-sm font-semibold">
-                Small business, creators & product teams
+                Small business, creators &amp; product teams
               </div>
             </div>
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
@@ -424,7 +454,7 @@ function HeroCard() {
 
           <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>
-              Built for humans first. Optimized for search, apps, and systems
+              Built for humans first. Optimized for search, apps, AI and systems
               second.
             </span>
             <span>→ Let’s talk</span>
@@ -437,11 +467,15 @@ function HeroCard() {
 
 function HoverCard({ title, value, sub }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:-translate-y-1 hover:border-primary/60 hover:bg-slate-900/80 hover:shadow-lg hover:shadow-primary/20">
-      <div className="mb-1 text-xs text-slate-400">{title}</div>
-      <div className="text-sm font-medium">{value}</div>
-      <div className="mt-1 text-[11px] text-slate-500">{sub}</div>
-    </div>
+    <motion.div
+      className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:-translate-y-2 hover:border-primary/60 hover:bg-slate-900/80 hover:shadow-lg hover:shadow-primary/20"
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+    >
+      <div className="mb-1 text-sm text-slate-400">{title}</div>
+      <div className="text-sm font-medium text-slate-100">{value}</div>
+      <p className="mt-1 text-[11px] text-slate-500">{sub}</p>
+    </motion.div>
   );
 }
 
@@ -548,7 +582,7 @@ function ServiceCard({ title, body, bullets }) {
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
     >
-      <div className="mb-1 text-sm font-semibold">{title}</div>
+      <div className="mb-1 text-sm font-semibold text-slate-100">{title}</div>
       <p className="mb-3 text-xs text-slate-400">{body}</p>
       <ul className="space-y-1.5 text-xs text-slate-300">
         {bullets.map((b) => (
@@ -720,14 +754,14 @@ function Apps() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-accent/50 bg-slate-950/80 p-4">
+          <div className="rounded-2xl border border-accent/50 bg-slate-950/80 p-4 text-[11px]">
             <div className="mb-2 flex items-center justify-between text-xs text-slate-300">
               <span>Preferred mobile stack</span>
               <span className="text-[10px] rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-accent">
                 iOS + Android
               </span>
             </div>
-            <dl className="space-y-2 text-[11px] text-slate-300">
+            <dl className="space-y-2 text-slate-300">
               <div className="flex justify-between">
                 <dt>Framework</dt>
                 <dd className="text-slate-400">React Native, Expo</dd>
@@ -737,7 +771,7 @@ function Apps() {
                 <dd className="text-slate-400">Node / serverless APIs</dd>
               </div>
               <div className="flex justify-between">
-                <dt>State & data</dt>
+                <dt>State &amp; data</dt>
                 <dd className="text-slate-400">React Query, context, REST</dd>
               </div>
               <div className="flex justify-between">
@@ -749,7 +783,7 @@ function Apps() {
             </dl>
             <button
               onClick={() => scrollToSection("contact")}
-              className="mt-3 inline-flex w-full justify-center rounded-full border border-accent/60 bg-accent/10 px-4 py-2 text-[11px] font-medium text-accent hover:bg-accent/20 transition"
+              className="mt-3 inline-flex w-full justify-center rounded-full border border-accent/60 bg-accent/10 px-4 py-2 font-medium text-accent hover:bg-accent/20 transition"
             >
               Talk about a mobile app
             </button>
@@ -760,7 +794,109 @@ function Apps() {
   );
 }
 
-/* ----- Portfolio ----- */
+/* ----- AI & Automation Section ----- */
+
+function AISection() {
+  return (
+    <SectionWrapper
+      id="ai"
+      title="AI & Automation Solutions"
+      subtitle="Practical AI features that plug into your website, systems, and apps – without overcomplicating your stack."
+      right="From simple chat assistants to lead qualification, content automation, and internal tools, we can design AI that stays close to your business goals."
+    >
+      <div className="grid gap-8 lg:grid-cols-2 text-xs text-slate-300">
+        <div className="space-y-4">
+          <p>
+            AI should support your work, not replace it. I focus on use-cases
+            that actually save time or make your product better: smarter forms,
+            lead routing, content workflows, and internal tools that reduce
+            manual work.
+          </p>
+          <ul className="space-y-2">
+            {[
+              "Chat assistants connected to your existing content (FAQ, docs, services).",
+              "Lead qualification flows that tag and route inquiries automatically.",
+              "Content helpers for drafts, summaries, and product descriptions.",
+              "Internal tools that surface insights from your own data.",
+              "Careful UX so AI features feel reliable, not random.",
+            ].map((item) => (
+              <li key={item} className="flex gap-2">
+                <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-primary"></span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="grid gap-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="mb-2 text-[11px] uppercase tracking-[0.15em] text-slate-400">
+              Example AI-powered flows
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-[11px]">
+              {[
+                "Website chat assistant",
+                "Smart contact form",
+                "Lead scoring & tags",
+                "FAQ / help center bot",
+                "Internal Q&A over docs",
+                "Content brief generator",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-accent/50 bg-slate-950/80 p-4 text-[11px]">
+            <div className="mb-2 flex items-center justify-between text-xs text-slate-300">
+              <span>Typical AI stack</span>
+              <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-accent">
+                Practical, not hype
+              </span>
+            </div>
+            <dl className="space-y-2 text-slate-300">
+              <div className="flex justify-between">
+                <dt>Frontend</dt>
+                <dd className="text-slate-400">React / Next.js UI</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt>Backend</dt>
+                <dd className="text-slate-400">
+                  Node / serverless APIs
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt>AI layer</dt>
+                <dd className="text-slate-400">
+                  External APIs combined with your data
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt>Data</dt>
+                <dd className="text-slate-400">
+                  Your website, docs, FAQs, CRM, etc.
+                </dd>
+              </div>
+            </dl>
+            <button
+              onClick={() => scrollToSection("contact")}
+              className="mt-3 inline-flex w-full justify-center rounded-full border border-accent/60 bg-accent/10 px-4 py-2 font-medium text-accent hover:bg-accent/20 transition"
+            >
+              Talk about AI for your business
+            </button>
+          </div>
+        </div>
+      </div>
+    </SectionWrapper>
+  );
+}
+
+/* ----- Portfolio (with spinning globe + brand text) ----- */
 
 function Portfolio() {
   return (
@@ -821,19 +957,26 @@ function ProjectCard({ tag, tagColor, title, body, bullets, stack, cta }) {
       className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-primary/60 transition hover:shadow-xl hover:shadow-primary/20"
       whileHover={{ translateY: -8 }}
     >
-      <div className="relative flex h-40 items-center justify-center bg-gradient-to-br from-primary/25 via-slate-900 to-slate-900">
-        <span className="text-xs text-slate-200 opacity-80">
-          Screenshot / mockup here
-        </span>
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-tr from-primary/30 via-transparent to-accent/30" />
+      {/* Brand globe header */}
+      <div className="relative flex flex-col items-center justify-center gap-2 py-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <SpinningGlobe sizeClass="w-14 h-14" />
+        <div className="text-[11px] uppercase tracking-[0.16em] text-slate-300 text-center">
+          Toussaint IT System Development
+        </div>
+        <div className="text-[10px] tracking-[0.18em] text-slate-400 text-center">
+          WEB &amp; APP &amp; SEO
+        </div>
       </div>
+
       <div className="flex flex-1 flex-col p-5">
         <div
           className={`mb-1 text-[11px] uppercase tracking-[0.15em] ${tagColor}`}
         >
           {tag}
         </div>
-        <h3 className="mb-1 text-sm font-semibold">{title}</h3>
+        <h3 className="mb-1 text-sm font-semibold text-slate-100">
+          {title}
+        </h3>
         <p className="mb-3 text-xs text-slate-400">{body}</p>
         <ul className="mb-4 space-y-1 text-[11px] text-slate-400">
           {bullets.map((b) => (
@@ -887,7 +1030,7 @@ function Process() {
             <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
               {i + 1}
             </div>
-            <h3 className="text-sm font-semibold">{s.title}</h3>
+            <h3 className="text-sm font-semibold text-slate-100">{s.title}</h3>
             <p className="text-slate-400">{s.body}</p>
           </motion.div>
         ))}
@@ -896,7 +1039,7 @@ function Process() {
   );
 }
 
-/* ----- Pricing ----- */
+/* ----- Pricing (tripled prices) ----- */
 
 function Pricing() {
   return (
@@ -912,7 +1055,7 @@ function Pricing() {
           badgeColor=""
           tier="Starter"
           name="Launch Page"
-          price="$1,200+"
+          price="$3,600+"
           description="Perfect for a new offer, product, or simple personal brand presence."
           bullets={[
             "Single landing page",
@@ -927,7 +1070,7 @@ function Pricing() {
           badgeColor="bg-primary/20 text-primary border border-primary/60"
           tier="Growth"
           name="Business Website + SEO"
-          price="$2,500–$4,500"
+          price="$7,500–$13,500"
           description="For small businesses that want a solid site and real SEO foundations."
           bullets={[
             "Up to 5 pages (Home, About, Services, Blog, Contact)",
@@ -943,7 +1086,7 @@ function Pricing() {
           badgeColor=""
           tier="Ongoing"
           name="SEO, Systems & App Support"
-          price="$600–$1,500 / month"
+          price="$1,800–$4,500 / month"
           description="Monthly support to keep your site, systems, and apps fast, updated, and climbing in search."
           bullets={[
             "Monthly SEO improvements & reporting",
@@ -988,9 +1131,9 @@ function PricingCard({
       <div className="mb-1 text-[11px] uppercase tracking-[0.15em] text-slate-400">
         {tier}
       </div>
-      <h3 className="mb-1 text-sm font-semibold">{name}</h3>
+      <h3 className="mb-1 text-sm font-semibold text-slate-100">{name}</h3>
       <p className="mb-4 text-slate-400">{description}</p>
-      <div className="mb-2 text-lg font-semibold">{price}</div>
+      <div className="mb-2 text-lg font-semibold text-slate-100">{price}</div>
       <ul className="mb-5 space-y-1 text-slate-300">
         {bullets.map((b) => (
           <li key={b}>• {b}</li>
@@ -1000,8 +1143,8 @@ function PricingCard({
         onClick={() => scrollToSection("contact")}
         className={`mt-auto inline-flex w-full justify-center rounded-full py-2 ${
           primary
-            ? "bg-primary hover:bg-primaryDark"
-            : "border border-slate-700 hover:border-primary"
+            ? "bg-primary hover:bg-primaryDark text-slate-950"
+            : "border border-slate-700 hover:border-primary text-slate-100"
         } transition`}
       >
         {primary ? "Talk about this package" : "Start with this"}
@@ -1093,41 +1236,51 @@ function FAQ() {
   );
 }
 
-/* ----- Contact ----- */
+/* ----- Contact (mailto -> Gmail) ----- */
 
 function Contact() {
   const [status, setStatus] = useState("");
 
   function handleSubmit(e) {
     e.preventDefault();
-    setStatus("Sending...");
+    setStatus("Opening your email app...");
 
-    // TODO: connect to your real backend / SMTP / Formspree / Resend etc.
-    setTimeout(() => {
-      setStatus(
-        "Thanks for your message! I’ll get back to you within 1–2 business days."
-      );
-      e.target.reset();
-    }, 800);
+    const form = e.target;
+    const formData = new FormData(form);
+    const name = formData.get("name") || "";
+    const email = formData.get("email") || "";
+    const budget = formData.get("budget") || "";
+    const timeline = formData.get("timeline") || "";
+    const message = formData.get("message") || "";
+
+    const TO_EMAIL = "yourgmail@gmail.com"; // <-- put your real Gmail here
+
+    const subject = `New project inquiry from ${name}`;
+    const body = `
+Name: ${name}
+Email: ${email}
+Budget: ${budget}
+Timeline: ${timeline}
+
+Message:
+${message}
+    `.trim();
+
+    window.location.href = `mailto:${encodeURIComponent(
+      TO_EMAIL
+    )}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    form.reset();
   }
 
   return (
     <SectionWrapper
       id="contact"
       title="Let’s talk about your project"
-      subtitle="Tell me about your business, your current site or app (if you have one), and what you’d like your website, SEO, systems, and apps to achieve."
+      subtitle="Tell me about your business, your current site or app (if you have one), and what you’d like your website, SEO, systems, AI, and apps to achieve."
     >
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="space-y-3 text-xs text-slate-400">
-          <p>
-            Prefer email? Reach me at{" "}
-            <a
-              href="mailto:info@your-domain.com"
-              className="text-primary hover:underline"
-            >
-              info@your-domain.com
-            </a>
-          </p>
           <p>We can work together remotely, wherever you are.</p>
           <p>
             During our first call, we’ll go over your goals, timeline, and
@@ -1234,10 +1387,13 @@ function Footer() {
   return (
     <footer className="border-t border-slate-900 py-6">
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-between gap-3 px-4 text-[11px] text-slate-500 sm:flex-row">
-        <div>© {year} Cristian D Toussaint. All rights reserved.</div>
+        <div>
+          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —
+          Cristian D Toussaint.
+        </div>
         <div className="flex items-center gap-4">
           <a
-            href="https://github.com/your-profile"
+            href="https://github.com/toussaint1990"
             target="_blank"
             rel="noreferrer"
             className="hover:text-primary transition"
@@ -1245,7 +1401,7 @@ function Footer() {
             GitHub
           </a>
           <a
-            href="https://www.linkedin.com/in/your-profile"
+            href="https://www.linkedin.com/"
             target="_blank"
             rel="noreferrer"
             className="hover:text-primary transition"
