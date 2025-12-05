@@ -11,22 +11,17 @@ const sectionTransition = {
   ease: "easeOut",
 };
 
-/* ---------- Reusable Spinning World Globe (clear world map) ---------- */
+/* ---------- Reusable Spinning World Globe (world map style) ---------- */
 
 function SpinningGlobe({ sizeClass = "w-16 h-16" }) {
   return (
     <div className="relative flex items-center justify-center">
       <div
         className={`relative flex items-center justify-center rounded-full bg-gradient-to-br from-sky-400 via-sky-500 to-blue-900 shadow-lg shadow-sky-500/40 ${sizeClass} animate-spin`}
-        // full 360° spin every 4 seconds
-        style={{ animationDuration: "4s" }}
+        style={{ animationDuration: "4s" }} // full spin every 4 seconds
       >
-        {/* subtle glow behind */}
         <div className="absolute inset-0 rounded-full bg-sky-300/15 blur-xl" />
-        {/* world map emoji as the visible globe */}
-        <span className="relative text-3xl sm:text-4xl">
-          🌎
-        </span>
+        <span className="relative text-3xl sm:text-4xl">🌎</span>
       </div>
     </div>
   );
@@ -323,7 +318,7 @@ function Hero() {
             transition={sectionTransition}
           >
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-ping"></span>
               <span>
                 Toussaint IT System Development • Web &amp; App &amp; SEO
               </span>
@@ -866,9 +861,7 @@ function AISection() {
               </div>
               <div className="flex justify-between">
                 <dt>Backend</dt>
-                <dd className="text-slate-400">
-                  Node / serverless APIs
-                </dd>
+                <dd className="text-slate-400">Node / serverless APIs</dd>
               </div>
               <div className="flex justify-between">
                 <dt>AI layer</dt>
@@ -1236,7 +1229,7 @@ function FAQ() {
   );
 }
 
-/* ----- Contact (mailto -> Gmail) ----- */
+/* ----- Contact (wired to Gmail + location map) ----- */
 
 function Contact() {
   const [status, setStatus] = useState("");
@@ -1253,7 +1246,7 @@ function Contact() {
     const timeline = formData.get("timeline") || "";
     const message = formData.get("message") || "";
 
-    const TO_EMAIL = "yourgmail@gmail.com"; // <-- put your real Gmail here
+    const TO_EMAIL = "toussaint.systemdevelopment@gmail.com";
 
     const subject = `New project inquiry from ${name}`;
     const body = `
@@ -1280,14 +1273,34 @@ ${message}
       subtitle="Tell me about your business, your current site or app (if you have one), and what you’d like your website, SEO, systems, AI, and apps to achieve."
     >
       <div className="grid gap-10 lg:grid-cols-2">
-        <div className="space-y-3 text-xs text-slate-400">
+        {/* Left column: text + address + map */}
+        <div className="space-y-4 text-xs text-slate-400">
           <p>We can work together remotely, wherever you are.</p>
           <p>
             During our first call, we’ll go over your goals, timeline, and
             budget, and I’ll recommend the best starting point.
           </p>
+
+          <div className="pt-2 border-t border-slate-800 space-y-2">
+            <div className="text-slate-200 text-sm">
+              Based in Miami, Florida
+            </div>
+            <p className="text-[11px] text-slate-400">
+              15750 SW 105th Ter, Miami, FL 33196
+            </p>
+            <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 h-56">
+              <iframe
+                title="Toussaint IT System Development Location"
+                src="https://www.google.com/maps?q=15750%20SW%20105th%20Ter%2C%20Miami%2C%20FL%2033196&output=embed"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-full border-0"
+              ></iframe>
+            </div>
+          </div>
         </div>
 
+        {/* Right column: form */}
         <form
           onSubmit={handleSubmit}
           className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-xs shadow-lg shadow-black/40"
