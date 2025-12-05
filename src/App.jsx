@@ -889,7 +889,7 @@ function AISection() {
   );
 }
 
-/* ----- Portfolio (with spinning globe + brand text) ----- */
+/* ----- Portfolio ----- */
 
 function Portfolio() {
   return (
@@ -950,7 +950,6 @@ function ProjectCard({ tag, tagColor, title, body, bullets, stack, cta }) {
       className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-primary/60 transition hover:shadow-xl hover:shadow-primary/20"
       whileHover={{ translateY: -8 }}
     >
-      {/* Brand globe header */}
       <div className="relative flex flex-col items-center justify-center gap-2 py-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <SpinningGlobe sizeClass="w-14 h-14" />
         <div className="text-[11px] uppercase tracking-[0.16em] text-slate-300 text-center">
@@ -1229,14 +1228,14 @@ function FAQ() {
   );
 }
 
-/* ----- Contact (wired to Gmail + location map) ----- */
+/* ----- Contact (POSTs to /api/contact on Vercel) ----- */
 
 function Contact() {
   const [status, setStatus] = useState("");
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setStatus("Opening your email app...");
+    setStatus("Sending your message...");
 
     const form = e.target;
     const formData = new FormData(form);
@@ -1246,24 +1245,33 @@ function Contact() {
     const timeline = formData.get("timeline") || "";
     const message = formData.get("message") || "";
 
-    const TO_EMAIL = "toussaint.systemdevelopment@gmail.com";
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          budget,
+          timeline,
+          message,
+        }),
+      });
 
-    const subject = `New project inquiry from ${name}`;
-    const body = `
-Name: ${name}
-Email: ${email}
-Budget: ${budget}
-Timeline: ${timeline}
+      if (!res.ok) {
+        throw new Error(`Request failed with ${res.status}`);
+      }
 
-Message:
-${message}
-    `.trim();
-
-    window.location.href = `mailto:${encodeURIComponent(
-      TO_EMAIL
-    )}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    form.reset();
+      setStatus(
+        "Thanks! Your message has been sent. I’ll get back to you as soon as possible."
+      );
+      form.reset();
+    } catch (err) {
+      console.error("Contact form error:", err);
+      setStatus(
+        "Something went wrong. Please email me directly at toussaint.systemdevelopment@gmail.com."
+      );
+    }
   }
 
   return (
@@ -1401,7 +1409,7 @@ function Footer() {
     <footer className="border-t border-slate-900 py-6">
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-between gap-3 px-4 text-[11px] text-slate-500 sm:flex-row">
         <div>
-          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —
+          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —{" "}
           Cristian D Toussaint.
         </div>
         <div className="flex items-center gap-4">
