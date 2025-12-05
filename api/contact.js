@@ -1,52 +1,42 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+// api/contact.js  (Vercel serverless function, ESM version)
+import { Resend } from "resend";
 
-function scrollToSection(id) {
-  const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: "smooth" });
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const { name, email, budget, timeline, message } = req.body ?? {};
+
+    if (!name || !email || !message) {
+      res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    await resend.emails.send({
+      // MUST be a sender on a verified domain in your Resend account
+      from: "Website Contact <contact@wow5050.org>",
+      to: "toussaint.systemdevelopment@gmail.com",
+      reply_to: email,
+      subject: `New project inquiry from ${name}`,
+      text: `
+Name: ${name}
+Email: ${email}
+Budget: ${budget || "not specified"}
+Timeline: ${timeline || "not specified"}
+
+Message:
+${message}
+      `.trim(),
+    });
+
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("Resend error:", error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
 }
-
-const sectionTransition = {
-  duration: 0.6,
-  ease: "easeOut",
-};
-
-// Base URL for API (dev uses live site, prod uses relative path)
-const API_BASE =
-  import.meta.env.MODE === "development"
-    ? "https://toussaintdigitaldevelopments.com"
-    : "";
-
-/* ---------- Reusable Spinning World Globe (world map style) ---------- */
-
-function SpinningGlobe({ sizeClass = "w-16 h-16" }) {
-  return (
-    <div className="relative flex items-center justify-center">
-      <div
-        className={`relative flex items-center justify-center rounded-full bg-gradient-to-br from-sky-400 via-sky-500 to-blue-900 shadow-lg shadow-sky-500/40 ${sizeClass} animate-spin`}
-        style={{ animationDuration: "4s" }} // full spin every 4 seconds
-      >
-        <div className="absolute inset-0 rounded-full bg-sky-300/15 blur-xl" />
-        <span className="relative text-3xl sm:text-4xl">🌎</span>
-      </div>
-    </div>
-  );
-}
-
-export default function App() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [introDone, setIntroDone] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [showFab, setShowFab] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const docHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docHeight > 0 ? scrollTop / docHeight : 0;
-      setScrollProgress(progress);
-      setShowFab(scrollTop > 400);
-    };
-    window.addEventListener("scroll", onScroll);
-    return
