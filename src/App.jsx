@@ -8,9 +8,9 @@ const LAUNCH_PAGE_PRICE_ID = "price_1SbkdtHEwoEOxveTuIhggZvx";
 
 // Business Website + SEO (one-time)
 // 7,500 / 10,500 / 13,500
-const BUSINESS_WEBSITE_PRICE_ID_7500 = "price_1SbkkrHEwoEOxveTqwekTcr6";   // Small
-const BUSINESS_WEBSITE_PRICE_ID_10500 = "price_1SbkoGHEwoEOxveTiOJRb10o";  // Medium
-const BUSINESS_WEBSITE_PRICE_ID_13500 = "price_1SbkozHEwoEOxveTT7q7wU40";  // Large
+const BUSINESS_WEBSITE_PRICE_ID_7500 = "price_1SbkkrHEwoEOxveTqwekTcr6"; // Small
+const BUSINESS_WEBSITE_PRICE_ID_10500 = "price_1SbkoGHEwoEOxveTiOJRb10o"; // Medium
+const BUSINESS_WEBSITE_PRICE_ID_13500 = "price_1SbkozHEwoEOxveTT7q7wU40"; // Large
 
 // SEO, Systems & App Support (monthly)
 // Essentials / Growth / Scale
@@ -395,10 +395,9 @@ function Hero() {
             </div>
 
             <h1 className="mb-4 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-              Modern websites,{" "}
-              <span className="text-primary">apps</span> &amp;{" "}
-              <span className="text-accent">systems</span> that perform and
-              rank.
+              Modern websites, <span className="text-primary">apps</span>{" "}
+              &amp; <span className="text-accent">systems</span> that perform
+              and rank.
             </h1>
 
             <p className="mb-6 max-w-xl text-sm text-slate-300 sm:text-base">
@@ -1096,7 +1095,9 @@ function Process() {
             <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
               {i + 1}
             </div>
-            <h3 className="text-sm font-semibold text-slate-100">{s.title}</h3>
+            <h3 className="text-sm font-semibold text-slate-100">
+              {s.title}
+            </h3>
             <p className="text-slate-400">{s.body}</p>
           </motion.div>
         ))}
@@ -1386,41 +1387,55 @@ function FAQ() {
   );
 }
 
-/* ----- Contact (mailto + location map) ----- */
+/* ----- Contact (POST to /api/contact, sends to Gmail via backend) ----- */
 
 function Contact() {
-  const [status, setStatus] = useState("");
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    budget: "",
+    timeline: "",
+    message: "",
+  });
+  const [status, setStatus] = useState("idle"); // idle | sending | success | error
+  const [error, setError] = useState("");
 
-  function handleSubmit(e) {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setContactForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    setStatus("Opening your email app...");
+    setStatus("sending");
+    setError("");
 
-    const form = e.target;
-    const formData = new FormData(form);
-    const name = formData.get("name") || "";
-    const email = formData.get("email") || "";
-    const budget = formData.get("budget") || "";
-    const timeline = formData.get("timeline") || "";
-    const message = formData.get("message") || "";
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contactForm),
+      });
 
-    const TO_EMAIL = "toussaint.systemdevelopment@gmail.com";
+      const data = await res.json();
 
-    const subject = `New project inquiry from ${name}`;
-    const body = `
-Name: ${name}
-Email: ${email}
-Budget: ${budget}
-Timeline: ${timeline}
+      if (!res.ok) {
+        throw new Error(data?.error || "Something went wrong.");
+      }
 
-Message:
-${message}
-    `.trim();
-
-    window.location.href = `mailto:${encodeURIComponent(
-      TO_EMAIL
-    )}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    form.reset();
+      setStatus("success");
+      setContactForm({
+        name: "",
+        email: "",
+        budget: "",
+        timeline: "",
+        message: "",
+      });
+    } catch (err) {
+      console.error(err);
+      setStatus("error");
+      setError(err.message || "Failed to send message. Please try again.");
+    }
   }
 
   return (
@@ -1471,6 +1486,8 @@ ${message}
                 id="name"
                 name="name"
                 required
+                value={contactForm.name}
+                onChange={handleChange}
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-primary"
               />
             </div>
@@ -1483,6 +1500,8 @@ ${message}
                 name="email"
                 type="email"
                 required
+                value={contactForm.email}
+                onChange={handleChange}
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-primary"
               />
             </div>
@@ -1495,6 +1514,8 @@ ${message}
             <select
               id="budget"
               name="budget"
+              value={contactForm.budget}
+              onChange={handleChange}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-primary"
             >
               <option value="">Select a range</option>
@@ -1512,6 +1533,8 @@ ${message}
             <select
               id="timeline"
               name="timeline"
+              value={contactForm.timeline}
+              onChange={handleChange}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-primary"
             >
               <option value="">How soon?</option>
@@ -1530,19 +1553,25 @@ ${message}
               name="message"
               rows="4"
               required
+              value={contactForm.message}
+              onChange={handleChange}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-primary"
             ></textarea>
           </div>
 
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 text-xs font-medium hover:bg-primaryDark transition shadow-md shadow-primary/40"
+            disabled={status === "sending"}
+            className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 text-xs font-medium hover:bg-primaryDark transition shadow-md shadow-primary/40 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Send message
+            {status === "sending" ? "Sending..." : "Send message"}
           </button>
 
           <p className="text-[11px] text-slate-400 min-h-[1.25rem]">
-            {status}
+            {status === "success" &&
+              "✅ Message sent! I’ll get back to you shortly."}
+            {status === "error" &&
+              `❌ ${error || "Something went wrong. Please try again."}`}
           </p>
         </form>
       </div>
