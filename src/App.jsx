@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { loadStripe } from "@stripe/stripe-js";
+
+/* ---------- Stripe Price IDs (real) ---------- */
+
+// Launch Page (one-time)
+const LAUNCH_PAGE_PRICE_ID = "price_1SbanBQYf1I0K9mH3pyaR4sH";
+
+// Business Website + SEO (one-time)
+// 7,500 / 10,500 / 13,500
+const BUSINESS_WEBSITE_PRICE_ID_7500 = "price_1Sbb2uQYf1I0K9mHRarHYID2";
+const BUSINESS_WEBSITE_PRICE_ID_10500 = "price_1SbbXVQYf1I0K9mHI4bLUKu9";
+const BUSINESS_WEBSITE_PRICE_ID_13500 = "price_1SbbXVQYf1I0K9mHg8pur9KX";
+
+// SEO, Systems & App Support (monthly)
+const SUPPORT_PRICE_ID_1800 = "price_1Sbb5lQYf1I0K9mHaKwASDln";
+const SUPPORT_PRICE_ID_3000 = "price_1SbbBtQYf1I0K9mHIvaER9K2";
+const SUPPORT_PRICE_ID_4500 = "price_1SbbBtQYf1I0K9mH74yVtZrs";
 
 function scrollToSection(id) {
   const el = document.getElementById(id);
@@ -11,14 +26,6 @@ const sectionTransition = {
   duration: 0.6,
   ease: "easeOut",
 };
-
-/* ---------- Stripe setup ---------- */
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
-const STRIPE_CHECKOUT_URL = import.meta.env.PROD
-  ? "/api/create-checkout-session"
-  : "http://localhost:4242/create-checkout-session";
 
 /* ---------- Reusable Spinning World Globe (world map style) ---------- */
 
@@ -42,6 +49,7 @@ export default function App() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showFab, setShowFab] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutStatus, setCheckoutStatus] = useState("");
 
   useEffect(() => {
     const onScroll = () => {
@@ -56,68 +64,6 @@ export default function App() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  /* ---- Stripe price mapping ---- */
-
-  const priceMap = {
-    // Starter – Launch Page (one-time)
-    launch_starter: "price_1SbanBQYf1I0K9mH3pyaR4sH",
-
-    // Growth – Business Website + SEO (one-time tiers)
-    growth_7500: "price_1Sbb2uQYf1I0K9mHRarHYID2",
-    growth_10500: "price_1SbbXVQYf1I0K9mHI4bLUKu9",
-    growth_13500: "price_1SbbXVQYf1I0K9mHg8pur9KX",
-
-    // Ongoing – SEO, Systems & App Support (monthly tiers)
-    seo_1800: "price_1Sbb5lQYf1I0K9mHaKwASDln",
-    seo_3000: "price_1SbbBtQYf1I0K9mHIvaER9K2",
-    seo_4500: "price_1SbbBtQYf1I0K9mH74yVtZrs",
-  };
-
-  async function startCheckout(priceId, metaLabel) {
-    if (!priceId) {
-      alert("No price configured for this package yet.");
-      return;
-    }
-
-    try {
-      setCheckoutLoading(true);
-      const stripe = await stripePromise;
-
-      const res = await fetch(STRIPE_CHECKOUT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId,
-          label: metaLabel,
-        }),
-      });
-
-      if (!res.ok) {
-        console.error("Checkout session error:", await res.text());
-        throw new Error("Failed to create checkout session");
-      }
-
-      const data = await res.json();
-      if (!data.sessionId) {
-        throw new Error("Missing sessionId in response");
-      }
-
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
-
-      if (error) {
-        console.error(error);
-        alert("Stripe checkout error. Please try again.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong starting checkout.");
-    } finally {
-      setCheckoutLoading(false);
-    }
-  }
-
   const navItems = [
     { id: "services", label: "Services" },
     { id: "systems", label: "Systems" },
@@ -129,6 +75,51 @@ export default function App() {
     { id: "faq", label: "FAQ" },
     { id: "contact", label: "Contact" },
   ];
+
+  // Unified Stripe checkout handler
+  async function handleCheckout(priceId, label) {
+    try {
+      setCheckoutLoading(true);
+      setCheckoutStatus(`Connecting to Stripe for ${label}...`);
+
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Checkout error response:", text);
+        setCheckoutStatus("Could not start checkout. Please try again.");
+        setCheckoutLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+
+      // Prefer URL if backend returns it
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+
+      // Fallback if backend returns only sessionId (not ideal but works for now)
+      if (data.sessionId) {
+        // NOTE: normally you would use Stripe.js here
+        const fallbackUrl = `https://checkout.stripe.com/c/pay/${data.sessionId}`;
+        window.location.href = fallbackUrl;
+        return;
+      }
+
+      setCheckoutStatus("Stripe did not return a checkout URL.");
+      setCheckoutLoading(false);
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setCheckoutStatus("Unexpected error. Please try again or contact me.");
+      setCheckoutLoading(false);
+    }
+  }
 
   return (
     <div className="bg-dark text-slate-100 min-h-screen">
@@ -225,50 +216,12 @@ export default function App() {
         <AISection />
         <Portfolio />
         <Process />
-        <Pricing
-          checkoutLoading={checkoutLoading}
-          onCheckoutStarter={() =>
-            startCheckout(priceMap.launch_starter, "Launch Page")
-          }
-          onCheckoutGrowth={async () => {
-            const choice = (window.prompt(
-              "Choose a Business Website + SEO package:\n" +
-                "1 – Essential ($7,500)\n" +
-                "2 – Mid Package ($10,500)\n" +
-                "3 – Full Package ($13,500)"
-            ) || "").trim();
-
-            let priceId = null;
-            if (choice === "1") priceId = priceMap.growth_7500;
-            else if (choice === "2") priceId = priceMap.growth_10500;
-            else if (choice === "3") priceId = priceMap.growth_13500;
-            else {
-              alert("No package selected.");
-              return;
-            }
-
-            await startCheckout(priceId, "Business Website + SEO");
-          }}
-          onCheckoutSEO={async () => {
-            const choice = (window.prompt(
-              "Choose an SEO, Systems & App Support package (monthly):\n" +
-                "1 – Starter ($1,800 / month)\n" +
-                "2 – Growth ($3,000 / month)\n" +
-                "3 – Scale ($4,500 / month)"
-            ) || "").trim();
-
-            let priceId = null;
-            if (choice === "1") priceId = priceMap.seo_1800;
-            else if (choice === "2") priceId = priceMap.seo_3000;
-            else if (choice === "3") priceId = priceMap.seo_4500;
-            else {
-              alert("No package selected.");
-              return;
-            }
-
-            await startCheckout(priceId, "SEO, Systems & App Support");
-          }}
-        />
+        <Pricing onCheckout={handleCheckout} checkoutLoading={checkoutLoading} />
+        {checkoutStatus && (
+          <div className="max-w-6xl mx-auto px-4 -mt-6 text-xs text-slate-400">
+            {checkoutStatus}
+          </div>
+        )}
         <Testimonials />
         <FAQ />
         <Contact />
@@ -469,7 +422,10 @@ function Hero() {
             </div>
 
             <div className="flex flex-wrap gap-6 text-xs text-slate-400">
-              <Stat label="+10 yrs" sub="Building and optimizing experiences" />
+              <Stat
+                label="10+ yrs"
+                sub="Building & optimizing experiences"
+              />
               <Stat label="Core Web Vitals" sub="Performance-focused builds" />
               <Stat label="Web • Apps • AI" sub="End-to-end systems" />
             </div>
@@ -1147,14 +1103,9 @@ function Process() {
   );
 }
 
-/* ----- Pricing (Stripe checkout wired) ----- */
+/* ----- Pricing (Stripe checkout) ----- */
 
-function Pricing({
-  checkoutLoading,
-  onCheckoutStarter,
-  onCheckoutGrowth,
-  onCheckoutSEO,
-}) {
+function Pricing({ onCheckout, checkoutLoading }) {
   return (
     <SectionWrapper
       id="pricing"
@@ -1177,8 +1128,8 @@ function Pricing({
             "Contact form & thank-you page",
           ]}
           primary={false}
-          loading={checkoutLoading}
-          onCheckout={onCheckoutStarter}
+          onCheckout={() => onCheckout(LAUNCH_PAGE_PRICE_ID, "Launch Page")}
+          checkoutLoading={checkoutLoading}
         />
         <PricingCard
           badge="Most popular"
@@ -1195,8 +1146,13 @@ function Pricing({
             "Google Analytics / Search Console setup",
           ]}
           primary
-          loading={checkoutLoading}
-          onCheckout={onCheckoutGrowth}
+          onCheckout={() =>
+            onCheckout(
+              BUSINESS_WEBSITE_PRICE_ID_10500,
+              "Business Website + SEO"
+            )
+          }
+          checkoutLoading={checkoutLoading}
         />
         <PricingCard
           badge=""
@@ -1212,8 +1168,10 @@ function Pricing({
             "Priority support for bug fixes & small features",
           ]}
           primary={false}
-          loading={checkoutLoading}
-          onCheckout={onCheckoutSEO}
+          onCheckout={() =>
+            onCheckout(SUPPORT_PRICE_ID_3000, "SEO, Systems & App Support")
+          }
+          checkoutLoading={checkoutLoading}
         />
       </div>
     </SectionWrapper>
@@ -1229,8 +1187,8 @@ function PricingCard({
   description,
   bullets,
   primary,
-  loading,
   onCheckout,
+  checkoutLoading,
 }) {
   return (
     <motion.div
@@ -1261,16 +1219,15 @@ function PricingCard({
         ))}
       </ul>
       <button
-        type="button"
         onClick={onCheckout}
-        disabled={loading}
+        disabled={checkoutLoading}
         className={`mt-auto inline-flex w-full justify-center rounded-full py-2 ${
           primary
             ? "bg-primary hover:bg-primaryDark text-slate-950"
             : "border border-slate-700 hover:border-primary text-slate-100"
         } transition disabled:opacity-60 disabled:cursor-not-allowed`}
       >
-        {loading ? "Starting checkout..." : "Secure checkout"}
+        {checkoutLoading ? "Connecting to Stripe..." : "Secure checkout"}
       </button>
     </motion.div>
   );
@@ -1359,46 +1316,41 @@ function FAQ() {
   );
 }
 
-/* ----- Contact (calls /contact backend for Resend) ----- */
+/* ----- Contact (mailto + location map) ----- */
 
 function Contact() {
   const [status, setStatus] = useState("");
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
-    setStatus("Sending...");
+    setStatus("Opening your email app...");
 
     const form = e.target;
-    const formData = {
-      name: form.name.value,
-      email: form.email.value,
-      budget: form.budget.value,
-      timeline: form.timeline.value,
-      message: form.message.value,
-    };
+    const formData = new FormData(form);
+    const name = formData.get("name") || "";
+    const email = formData.get("email") || "";
+    const budget = formData.get("budget") || "";
+    const timeline = formData.get("timeline") || "";
+    const message = formData.get("message") || "";
 
-    try {
-      const res = await fetch("/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+    const TO_EMAIL = "toussaint.systemdevelopment@gmail.com";
 
-      if (!res.ok) {
-        console.error("Contact error:", await res.text());
-        throw new Error("Request failed");
-      }
+    const subject = `New project inquiry from ${name}`;
+    const body = `
+Name: ${name}
+Email: ${email}
+Budget: ${budget}
+Timeline: ${timeline}
 
-      setStatus(
-        "Thanks! Your message has been sent. I’ll get back to you as soon as possible."
-      );
-      form.reset();
-    } catch (err) {
-      console.error(err);
-      setStatus(
-        "Something went wrong. Please email me directly at toussaint.systemdevelopment@gmail.com."
-      );
-    }
+Message:
+${message}
+    `.trim();
+
+    window.location.href = `mailto:${encodeURIComponent(
+      TO_EMAIL
+    )}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    form.reset();
   }
 
   return (

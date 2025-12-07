@@ -1,7 +1,18 @@
 // api/create-checkout-session.js
-import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+import Stripe from "stripe";
+import dotenv from "dotenv";
+
+// Load env vars locally
+dotenv.config();
+
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) {
+  console.error("Missing STRIPE_SECRET_KEY environment variable.");
+}
+
+const stripe = new Stripe(stripeSecretKey);
 
 export default async function handler(req, res) {
   // Only allow POST
@@ -30,11 +41,16 @@ export default async function handler(req, res) {
       cancel_url: `${process.env.SITE_URL}/?checkout=cancel`,
     });
 
-    return res.status(200).json({ url: session.url });
+    return res.status(200).json({ sessionId: session.id });
   } catch (err) {
     console.error("Stripe error:", err);
-    return res
-      .status(500)
-      .json({ error: "Stripe error", message: err.message });
+    return res.status(500).json({
+      error: "Stripe error",
+      message: err.message,
+      statusCode: err.statusCode,
+      type: err.type,
+      code: err.code,
+      param: err.param,
+    });
   }
 }
