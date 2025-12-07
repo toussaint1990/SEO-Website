@@ -12,10 +12,31 @@ const BUSINESS_WEBSITE_PRICE_ID_7500 = "price_1Sbb2uQYf1I0K9mHRarHYID2";
 const BUSINESS_WEBSITE_PRICE_ID_10500 = "price_1SbbXVQYf1I0K9mHI4bLUKu9";
 const BUSINESS_WEBSITE_PRICE_ID_13500 = "price_1SbbXVQYf1I0K9mHg8pur9KX";
 
-// SEO, Systems & App Support (monthly)
+// SEO, Systems & App Support (monthly – recurring)
 const SUPPORT_PRICE_ID_1800 = "price_1Sbb5lQYf1I0K9mHaKwASDln";
 const SUPPORT_PRICE_ID_3000 = "price_1SbbBtQYf1I0K9mHIvaER9K2";
 const SUPPORT_PRICE_ID_4500 = "price_1SbbBtQYf1I0K9mH74yVtZrs";
+
+/* ---------- Basic SEO (SPA-friendly) ---------- */
+
+const SITE_TITLE =
+  "Toussaint IT System Development | Web, Apps, SEO & Systems";
+const SITE_DESCRIPTION =
+  "Toussaint IT System Development builds fast websites, cross-platform apps, SEO foundations and connected cloud systems for small businesses, creators and product teams.";
+
+function setMetaTag(key, content, isProperty = false) {
+  if (!content || typeof document === "undefined") return;
+  const attr = isProperty ? "property" : "name";
+  let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+  if (!el) {
+    el = document.createElement("meta");
+    el.setAttribute(attr, key);
+    document.head.appendChild(el);
+  }
+  el.setAttribute("content", content);
+}
+
+/* ---------- Utilities ---------- */
 
 function scrollToSection(id) {
   const el = document.getElementById(id);
@@ -43,14 +64,40 @@ function SpinningGlobe({ sizeClass = "w-16 h-16" }) {
   );
 }
 
+/* ---------- Small loading spinner for buttons ---------- */
+
+function Spinner() {
+  return (
+    <span className="inline-block h-4 w-4 rounded-full border-2 border-slate-200 border-t-transparent animate-spin" />
+  );
+}
+
+/* =================================================================== */
+/*                                APP                                  */
+/* =================================================================== */
+
 export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [introDone, setIntroDone] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showFab, setShowFab] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutLoadingId, setCheckoutLoadingId] = useState(null);
   const [checkoutStatus, setCheckoutStatus] = useState("");
+  const [checkoutResult, setCheckoutResult] = useState(null); // "success" | "cancel" | null
 
+  /* ---------- SEO on mount ---------- */
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = SITE_TITLE;
+      setMetaTag("description", SITE_DESCRIPTION);
+      setMetaTag("og:title", SITE_TITLE, true);
+      setMetaTag("og:description", SITE_DESCRIPTION, true);
+      setMetaTag("og:type", "website", true);
+      setMetaTag("og:url", window.location.href, true);
+    }
+  }, []);
+
+  /* ---------- Scroll progress & FAB ---------- */
   useEffect(() => {
     const onScroll = () => {
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
@@ -62,6 +109,22 @@ export default function App() {
     };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* ---------- Read checkout result from URL ---------- */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("checkout");
+    if (result === "success" || result === "cancel") {
+      setCheckoutResult(result);
+      // Clean URL so reload doesn't show modal again
+      params.delete("checkout");
+      const newQuery = params.toString();
+      const newUrl =
+        window.location.pathname + (newQuery ? `?${newQuery}` : "");
+      window.history.replaceState({}, "", newUrl);
+    }
   }, []);
 
   const navItems = [
@@ -77,45 +140,55 @@ export default function App() {
   ];
 
   // Unified Stripe checkout handler
-  async function handleCheckout(priceId, label) {
+  async function handleCheckout({ priceId, label, mode }) {
     try {
-      setCheckoutLoading(true);
+      setCheckoutLoadingId(priceId);
       setCheckoutStatus(`Connecting to Stripe for ${label}...`);
 
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({
+          priceId,
+          mode, // "payment" or "subscription"
+          successPath: "?checkout=success",
+          cancelPath: "?checkout=cancel",
+        }),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("Checkout error response:", text);
-        setCheckoutStatus("Could not start checkout. Please try again.");
-        setCheckoutLoading(false);
-        return;
-      }
-
       const data = await res.json();
-      console.log("Checkout session response:", data);
 
+      if (!res.ok) {
+        console.error("Checkout error response:", data);
+        setCheckoutStatus(
+          data.message || "Could not start checkout. Please try again."
+        );
+        setCheckoutLoadingId(null);
+        return;
+      }
+
+      // New Stripe style: backend should send url
       if (data.url) {
-        window.location.href = data.url; // go to Stripe Checkout
+        window.location.href = data.url;
         return;
       }
-
+      if (data.session && data.session.url) {
+        window.location.href = data.session.url;
+        return;
+      }
       if (data.sessionId) {
-        const fallbackUrl = `https://checkout.stripe.com/c/pay/${data.sessionId}`;
-        window.location.href = fallbackUrl;
+        // Fallback if only sessionId was returned
+        window.location.href = `https://checkout.stripe.com/c/pay/${data.sessionId}`;
         return;
       }
 
-      setCheckoutStatus("Stripe did not return a checkout URL.");
-      setCheckoutLoading(false);
+      console.warn("Stripe session created but no URL returned:", data);
+      setCheckoutStatus("Stripe session created but no URL returned.");
+      setCheckoutLoadingId(null);
     } catch (err) {
       console.error("Checkout error:", err);
       setCheckoutStatus("Unexpected error. Please try again or contact me.");
-      setCheckoutLoading(false);
+      setCheckoutLoadingId(null);
     }
   }
 
@@ -214,7 +287,10 @@ export default function App() {
         <AISection />
         <Portfolio />
         <Process />
-        <Pricing onCheckout={handleCheckout} checkoutLoading={checkoutLoading} />
+        <Pricing
+          onCheckout={handleCheckout}
+          checkoutLoadingId={checkoutLoadingId}
+        />
         {checkoutStatus && (
           <div className="max-w-6xl mx-auto px-4 -mt-6 text-xs text-slate-400">
             {checkoutStatus}
@@ -245,6 +321,16 @@ export default function App() {
       {/* Intro overlay */}
       <AnimatePresence>
         {!introDone && <IntroOverlay onDone={() => setIntroDone(true)} />}
+      </AnimatePresence>
+
+      {/* Checkout result modal */}
+      <AnimatePresence>
+        {checkoutResult && (
+          <CheckoutResultModal
+            type={checkoutResult}
+            onClose={() => setCheckoutResult(null)}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
@@ -366,6 +452,60 @@ function IntroOverlay({ onDone }) {
     </motion.div>
   );
 }
+
+/* ---------- Checkout result modal ---------- */
+
+function CheckoutResultModal({ type, onClose }) {
+  const isSuccess = type === "success";
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="max-w-sm w-full mx-4 rounded-2xl border border-slate-700 bg-slate-900/95 p-6 shadow-xl"
+        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+        transition={{ duration: 0.25 }}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={`mt-1 flex h-8 w-8 items-center justify-center rounded-full ${
+              isSuccess ? "bg-emerald-500/20" : "bg-amber-500/20"
+            }`}
+          >
+            <span className={isSuccess ? "text-emerald-400" : "text-amber-400"}>
+              {isSuccess ? "✓" : "!"}
+            </span>
+          </div>
+          <div className="flex-1 text-sm">
+            <h3 className="font-semibold text-slate-100">
+              {isSuccess ? "Checkout complete (sandbox)" : "Checkout canceled"}
+            </h3>
+            <p className="mt-1 text-slate-300">
+              {isSuccess
+                ? "Thank you for testing the Stripe checkout flow. When you’re ready, switch from test mode to live mode in Stripe."
+                : "You canceled the checkout. You can always start again from the pricing section."}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-slate-100 px-4 py-2 text-xs font-medium text-slate-900 hover:bg-white transition"
+        >
+          Close
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* =================================================================== */
+/*                            CONTENT SECTIONS                         */
+/* =================================================================== */
 
 /* ---------- Hero ---------- */
 
@@ -1103,7 +1243,7 @@ function Process() {
 
 /* ----- Pricing (Stripe checkout) ----- */
 
-function Pricing({ onCheckout, checkoutLoading }) {
+function Pricing({ onCheckout, checkoutLoadingId }) {
   return (
     <SectionWrapper
       id="pricing"
@@ -1112,10 +1252,8 @@ function Pricing({ onCheckout, checkoutLoading }) {
       right="Prices are examples. Replace with your real numbers and currencies. Custom quotes available."
     >
       <div className="grid gap-6 text-xs md:grid-cols-3">
-        {/* Launch Page – single price */}
+        {/* Launch Page (one price) */}
         <PricingCard
-          badge=""
-          badgeColor=""
           tier="Starter"
           name="Launch Page"
           price="$3,600+"
@@ -1128,11 +1266,13 @@ function Pricing({ onCheckout, checkoutLoading }) {
           ]}
           primary={false}
           singlePriceId={LAUNCH_PAGE_PRICE_ID}
+          singleLabel="Launch Page"
+          mode="payment"
           onCheckout={onCheckout}
-          checkoutLoading={checkoutLoading}
+          checkoutLoadingId={checkoutLoadingId}
         />
 
-        {/* Business Website – 3 choices */}
+        {/* Business Website + SEO (3 one-time prices) */}
         <PricingCard
           badge="Most popular"
           badgeColor="bg-primary/20 text-primary border border-primary/60"
@@ -1150,26 +1290,27 @@ function Pricing({ onCheckout, checkoutLoading }) {
           primary
           priceOptions={[
             {
-              label: "Essential — $7,500",
+              label: "Essentials — $7,500",
               priceId: BUSINESS_WEBSITE_PRICE_ID_7500,
+              mode: "payment",
             },
             {
-              label: "Standard — $10,500",
+              label: "Growth — $10,500",
               priceId: BUSINESS_WEBSITE_PRICE_ID_10500,
+              mode: "payment",
             },
             {
-              label: "Advanced — $13,500",
+              label: "Scale — $13,500",
               priceId: BUSINESS_WEBSITE_PRICE_ID_13500,
+              mode: "payment",
             },
           ]}
           onCheckout={onCheckout}
-          checkoutLoading={checkoutLoading}
+          checkoutLoadingId={checkoutLoadingId}
         />
 
-        {/* SEO / Systems / Apps Support – 3 choices */}
+        {/* Support plan (3 recurring prices / subscription mode) */}
         <PricingCard
-          badge=""
-          badgeColor=""
           tier="Ongoing"
           name="SEO, Systems & App Support"
           price="$1,800–$4,500 / month"
@@ -1185,18 +1326,21 @@ function Pricing({ onCheckout, checkoutLoading }) {
             {
               label: "Essentials — $1,800 / month",
               priceId: SUPPORT_PRICE_ID_1800,
+              mode: "subscription",
             },
             {
               label: "Growth — $3,000 / month",
               priceId: SUPPORT_PRICE_ID_3000,
+              mode: "subscription",
             },
             {
               label: "Scale — $4,500 / month",
               priceId: SUPPORT_PRICE_ID_4500,
+              mode: "subscription",
             },
           ]}
           onCheckout={onCheckout}
-          checkoutLoading={checkoutLoading}
+          checkoutLoadingId={checkoutLoadingId}
         />
       </div>
     </SectionWrapper>
@@ -1212,12 +1356,15 @@ function PricingCard({
   description,
   bullets,
   primary,
-  onCheckout,
-  checkoutLoading,
+  // either singlePriceId OR priceOptions[]
   singlePriceId,
-  priceOptions = [],
+  singleLabel,
+  mode,
+  priceOptions,
+  onCheckout,
+  checkoutLoadingId,
 }) {
-  const hasOptions = priceOptions && priceOptions.length > 0;
+  const isSingle = !!singlePriceId;
 
   return (
     <motion.div
@@ -1248,48 +1395,68 @@ function PricingCard({
         ))}
       </ul>
 
-      {/* Multiple price choices (Business website, Support) */}
-      {hasOptions && (
-        <div className="mb-4 space-y-2">
-          {priceOptions.map((p) => (
-            <button
-              key={p.priceId}
-              type="button"
-              disabled={checkoutLoading}
-              onClick={() => onCheckout(p.priceId, `${name} – ${p.label}`)}
-              className="w-full rounded-full border border-slate-700 bg-slate-900/70 px-3 py-2 text-[11px] text-slate-100 hover:border-primary hover:bg-slate-900 hover:text-primary transition disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {checkoutLoading ? "Connecting to Stripe..." : p.label}
-            </button>
-          ))}
+      {/* Multi-price options */}
+      {priceOptions && (
+        <div className="flex flex-col gap-2">
+          {priceOptions.map((opt) => {
+            const isLoading = checkoutLoadingId === opt.priceId;
+            return (
+              <motion.button
+                key={opt.priceId}
+                whileTap={{ scale: 0.98 }}
+                onClick={() =>
+                  onCheckout({
+                    priceId: opt.priceId,
+                    label: opt.label,
+                    mode: opt.mode,
+                  })
+                }
+                disabled={isLoading}
+                className="inline-flex w-full items-center justify-between rounded-full border border-slate-700 bg-slate-900/80 px-4 py-2 text-[11px] text-slate-100 hover:border-primary hover:bg-slate-900 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span>{opt.label}</span>
+                {isLoading ? (
+                  <Spinner />
+                ) : (
+                  <span className="text-[10px] text-slate-400">
+                    Secure checkout →
+                  </span>
+                )}
+              </motion.button>
+            );
+          })}
         </div>
       )}
 
-      {/* Single-price secure checkout button (Launch Page) */}
-      {!hasOptions && singlePriceId && (
+      {/* Single-price CTA */}
+      {isSingle && (
         <button
-          onClick={() => onCheckout(singlePriceId, name)}
-          disabled={checkoutLoading}
+          onClick={() =>
+            onCheckout({
+              priceId: singlePriceId,
+              label: singleLabel || name,
+              mode: mode || "payment",
+            })
+          }
+          disabled={checkoutLoadingId === singlePriceId}
           className={`mt-auto inline-flex w-full justify-center rounded-full py-2 ${
             primary
               ? "bg-primary hover:bg-primaryDark text-slate-950"
               : "border border-slate-700 hover:border-primary text-slate-100"
           } transition disabled:opacity-60 disabled:cursor-not-allowed`}
         >
-          {checkoutLoading ? "Connecting to Stripe..." : "Secure checkout"}
+          {checkoutLoadingId === singlePriceId ? (
+            <div className="flex items-center gap-2 text-xs">
+              <Spinner />
+              <span>Connecting to Stripe…</span>
+            </div>
+          ) : (
+            "Secure checkout"
+          )}
         </button>
       )}
 
-      {/* Fallback: if no Stripe price configured, fall back to contact */}
-      {!hasOptions && !singlePriceId && (
-        <button
-          type="button"
-          onClick={() => scrollToSection("contact")}
-          className="mt-auto inline-flex w-full justify-center rounded-full border border-slate-700 px-4 py-2 text-slate-100 hover:border-primary hover:text-primary transition"
-        >
-          Talk about this package
-        </button>
-      )}
+      {/* If multi-price card, no extra CTA button – the rows above are the CTAs */}
     </motion.div>
   );
 }
@@ -1549,7 +1716,7 @@ function Footer() {
     <footer className="border-t border-slate-900 py-6">
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-between gap-3 px-4 text-[11px] text-slate-500 sm:flex-row">
         <div>
-          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —{" "}
+          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —
           Cristian D Toussaint.
         </div>
         <div className="flex items-center gap-4">
