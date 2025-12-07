@@ -6,6 +6,33 @@ function scrollToSection(id) {
   if (el) el.scrollIntoView({ behavior: "smooth" });
 }
 
+// ---------- Stripe Checkout helper ----------
+async function startCheckout(priceId) {
+  try {
+    const res = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priceId }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Network error");
+    }
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.location.href = data.url; // Redirect to Stripe Checkout
+    } else {
+      console.error("No checkout URL returned", data);
+      alert("Something went wrong starting checkout.");
+    }
+  } catch (err) {
+    console.error("Checkout error:", err);
+    alert("Something went wrong starting checkout.");
+  }
+}
+
 const sectionTransition = {
   duration: 0.6,
   ease: "easeOut",
@@ -889,7 +916,7 @@ function AISection() {
   );
 }
 
-/* ----- Portfolio ----- */
+/* ----- Portfolio (with spinning globe + brand text) ----- */
 
 function Portfolio() {
   return (
@@ -950,6 +977,7 @@ function ProjectCard({ tag, tagColor, title, body, bullets, stack, cta }) {
       className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-primary/60 transition hover:shadow-xl hover:shadow-primary/20"
       whileHover={{ translateY: -8 }}
     >
+      {/* Brand globe header */}
       <div className="relative flex flex-col items-center justify-center gap-2 py-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <SpinningGlobe sizeClass="w-14 h-14" />
         <div className="text-[11px] uppercase tracking-[0.16em] text-slate-300 text-center">
@@ -1031,7 +1059,7 @@ function Process() {
   );
 }
 
-/* ----- Pricing (tripled prices) ----- */
+/* ----- Pricing (tripled prices + Stripe checkout) ----- */
 
 function Pricing() {
   return (
@@ -1056,6 +1084,8 @@ function Pricing() {
             "Contact form & thank-you page",
           ]}
           primary={false}
+          // 👉 replace with your real Stripe Price ID
+          priceId="price_STARTER_123"
         />
         <PricingCard
           badge="Most popular"
@@ -1072,6 +1102,8 @@ function Pricing() {
             "Google Analytics / Search Console setup",
           ]}
           primary
+          // 👉 replace with your real Stripe Price ID
+          priceId="price_GROWTH_123"
         />
         <PricingCard
           badge=""
@@ -1087,6 +1119,8 @@ function Pricing() {
             "Priority support for bug fixes & small features",
           ]}
           primary={false}
+          // 👉 replace with your real Stripe Price ID
+          priceId="price_ONGOING_123"
         />
       </div>
     </SectionWrapper>
@@ -1102,6 +1136,7 @@ function PricingCard({
   description,
   bullets,
   primary,
+  priceId,
 }) {
   return (
     <motion.div
@@ -1132,14 +1167,20 @@ function PricingCard({
         ))}
       </ul>
       <button
-        onClick={() => scrollToSection("contact")}
+        onClick={() =>
+          priceId ? startCheckout(priceId) : scrollToSection("contact")
+        }
         className={`mt-auto inline-flex w-full justify-center rounded-full py-2 ${
           primary
             ? "bg-primary hover:bg-primaryDark text-slate-950"
             : "border border-slate-700 hover:border-primary text-slate-100"
         } transition`}
       >
-        {primary ? "Talk about this package" : "Start with this"}
+        {priceId
+          ? "Secure checkout"
+          : primary
+          ? "Talk about this package"
+          : "Start with this"}
       </button>
     </motion.div>
   );
@@ -1228,14 +1269,14 @@ function FAQ() {
   );
 }
 
-/* ----- Contact (POSTs to /api/contact on Vercel) ----- */
+/* ----- Contact (Resend API + map) ----- */
 
 function Contact() {
   const [status, setStatus] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setStatus("Sending your message...");
+    setStatus("Sending...");
 
     const form = e.target;
     const formData = new FormData(form);
@@ -1266,8 +1307,8 @@ function Contact() {
         "Thanks! Your message has been sent. I’ll get back to you as soon as possible."
       );
       form.reset();
-    } catch (err) {
-      console.error("Contact form error:", err);
+    } catch (error) {
+      console.error("Contact form error:", error);
       setStatus(
         "Something went wrong. Please email me directly at toussaint.systemdevelopment@gmail.com."
       );
@@ -1409,7 +1450,7 @@ function Footer() {
     <footer className="border-t border-slate-900 py-6">
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-between gap-3 px-4 text-[11px] text-slate-500 sm:flex-row">
         <div>
-          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —{" "}
+          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —
           Cristian D Toussaint.
         </div>
         <div className="flex items-center gap-4">
