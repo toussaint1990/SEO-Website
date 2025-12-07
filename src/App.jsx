@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { loadStripe } from "@stripe/stripe-js";
 
 /* ---------- Stripe Price IDs (real) ---------- */
 
@@ -17,9 +16,6 @@ const BUSINESS_WEBSITE_PRICE_ID_13500 = "price_1SbbXVQYf1I0K9mHg8pur9KX";
 const SUPPORT_PRICE_ID_1800 = "price_1Sbb5lQYf1I0K9mHaKwASDln";
 const SUPPORT_PRICE_ID_3000 = "price_1SbbBtQYf1I0K9mHIvaER9K2";
 const SUPPORT_PRICE_ID_4500 = "price_1SbbBtQYf1I0K9mH74yVtZrs";
-
-// Stripe.js instance (uses your VITE_STRIPE_PUBLISHABLE_KEY)
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function scrollToSection(id) {
   const el = document.getElementById(id);
@@ -80,20 +76,11 @@ export default function App() {
     { id: "contact", label: "Contact" },
   ];
 
-  // ✅ Unified Stripe checkout handler using Stripe.js redirectToCheckout
+  // Unified Stripe checkout handler
   async function handleCheckout(priceId, label) {
     try {
       setCheckoutLoading(true);
       setCheckoutStatus(`Connecting to Stripe for ${label}...`);
-
-      const stripe = await stripePromise;
-      if (!stripe) {
-        setCheckoutStatus(
-          "Stripe could not be loaded. Check your publishable key."
-        );
-        setCheckoutLoading(false);
-        return;
-      }
 
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -110,29 +97,24 @@ export default function App() {
       }
 
       const data = await res.json();
+      console.log("Checkout session response:", data);
 
-      if (!data.sessionId) {
-        console.error("Missing sessionId in response:", data);
-        setCheckoutStatus("Stripe did not return a checkout session.");
-        setCheckoutLoading(false);
+      if (data.url) {
+        window.location.href = data.url; // go to Stripe Checkout
         return;
       }
 
-      // 🔁 Correct way: let Stripe.js redirect to Checkout
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
-
-      if (error) {
-        console.error("Stripe redirect error:", error);
-        setCheckoutStatus(error.message || "Stripe redirect failed.");
-      } else {
-        setCheckoutStatus("");
+      if (data.sessionId) {
+        const fallbackUrl = `https://checkout.stripe.com/c/pay/${data.sessionId}`;
+        window.location.href = fallbackUrl;
+        return;
       }
+
+      setCheckoutStatus("Stripe did not return a checkout URL.");
+      setCheckoutLoading(false);
     } catch (err) {
       console.error("Checkout error:", err);
       setCheckoutStatus("Unexpected error. Please try again or contact me.");
-    } finally {
       setCheckoutLoading(false);
     }
   }
@@ -1130,6 +1112,7 @@ function Pricing({ onCheckout, checkoutLoading }) {
       right="Prices are examples. Replace with your real numbers and currencies. Custom quotes available."
     >
       <div className="grid gap-6 text-xs md:grid-cols-3">
+        {/* Launch Page – single price */}
         <PricingCard
           badge=""
           badgeColor=""
@@ -1144,9 +1127,12 @@ function Pricing({ onCheckout, checkoutLoading }) {
             "Contact form & thank-you page",
           ]}
           primary={false}
-          onCheckout={() => onCheckout(LAUNCH_PAGE_PRICE_ID, "Launch Page")}
+          singlePriceId={LAUNCH_PAGE_PRICE_ID}
+          onCheckout={onCheckout}
           checkoutLoading={checkoutLoading}
         />
+
+        {/* Business Website – 3 choices */}
         <PricingCard
           badge="Most popular"
           badgeColor="bg-primary/20 text-primary border border-primary/60"
@@ -1162,14 +1148,25 @@ function Pricing({ onCheckout, checkoutLoading }) {
             "Google Analytics / Search Console setup",
           ]}
           primary
-          onCheckout={() =>
-            onCheckout(
-              BUSINESS_WEBSITE_PRICE_ID_10500,
-              "Business Website + SEO"
-            )
-          }
+          priceOptions={[
+            {
+              label: "Essential — $7,500",
+              priceId: BUSINESS_WEBSITE_PRICE_ID_7500,
+            },
+            {
+              label: "Standard — $10,500",
+              priceId: BUSINESS_WEBSITE_PRICE_ID_10500,
+            },
+            {
+              label: "Advanced — $13,500",
+              priceId: BUSINESS_WEBSITE_PRICE_ID_13500,
+            },
+          ]}
+          onCheckout={onCheckout}
           checkoutLoading={checkoutLoading}
         />
+
+        {/* SEO / Systems / Apps Support – 3 choices */}
         <PricingCard
           badge=""
           badgeColor=""
@@ -1184,9 +1181,21 @@ function Pricing({ onCheckout, checkoutLoading }) {
             "Priority support for bug fixes & small features",
           ]}
           primary={false}
-          onCheckout={() =>
-            onCheckout(SUPPORT_PRICE_ID_3000, "SEO, Systems & App Support")
-          }
+          priceOptions={[
+            {
+              label: "Essentials — $1,800 / month",
+              priceId: SUPPORT_PRICE_ID_1800,
+            },
+            {
+              label: "Growth — $3,000 / month",
+              priceId: SUPPORT_PRICE_ID_3000,
+            },
+            {
+              label: "Scale — $4,500 / month",
+              priceId: SUPPORT_PRICE_ID_4500,
+            },
+          ]}
+          onCheckout={onCheckout}
           checkoutLoading={checkoutLoading}
         />
       </div>
@@ -1205,7 +1214,11 @@ function PricingCard({
   primary,
   onCheckout,
   checkoutLoading,
+  singlePriceId,
+  priceOptions = [],
 }) {
+  const hasOptions = priceOptions && priceOptions.length > 0;
+
   return (
     <motion.div
       className={`relative flex flex-col rounded-2xl border p-5 ${
@@ -1234,17 +1247,49 @@ function PricingCard({
           <li key={b}>• {b}</li>
         ))}
       </ul>
-      <button
-        onClick={onCheckout}
-        disabled={checkoutLoading}
-        className={`mt-auto inline-flex w-full justify-center rounded-full py-2 ${
-          primary
-            ? "bg-primary hover:bg-primaryDark text-slate-950"
-            : "border border-slate-700 hover:border-primary text-slate-100"
-        } transition disabled:opacity-60 disabled:cursor-not-allowed`}
-      >
-        {checkoutLoading ? "Connecting to Stripe..." : "Secure checkout"}
-      </button>
+
+      {/* Multiple price choices (Business website, Support) */}
+      {hasOptions && (
+        <div className="mb-4 space-y-2">
+          {priceOptions.map((p) => (
+            <button
+              key={p.priceId}
+              type="button"
+              disabled={checkoutLoading}
+              onClick={() => onCheckout(p.priceId, `${name} – ${p.label}`)}
+              className="w-full rounded-full border border-slate-700 bg-slate-900/70 px-3 py-2 text-[11px] text-slate-100 hover:border-primary hover:bg-slate-900 hover:text-primary transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {checkoutLoading ? "Connecting to Stripe..." : p.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Single-price secure checkout button (Launch Page) */}
+      {!hasOptions && singlePriceId && (
+        <button
+          onClick={() => onCheckout(singlePriceId, name)}
+          disabled={checkoutLoading}
+          className={`mt-auto inline-flex w-full justify-center rounded-full py-2 ${
+            primary
+              ? "bg-primary hover:bg-primaryDark text-slate-950"
+              : "border border-slate-700 hover:border-primary text-slate-100"
+          } transition disabled:opacity-60 disabled:cursor-not-allowed`}
+        >
+          {checkoutLoading ? "Connecting to Stripe..." : "Secure checkout"}
+        </button>
+      )}
+
+      {/* Fallback: if no Stripe price configured, fall back to contact */}
+      {!hasOptions && !singlePriceId && (
+        <button
+          type="button"
+          onClick={() => scrollToSection("contact")}
+          className="mt-auto inline-flex w-full justify-center rounded-full border border-slate-700 px-4 py-2 text-slate-100 hover:border-primary hover:text-primary transition"
+        >
+          Talk about this package
+        </button>
+      )}
     </motion.div>
   );
 }
@@ -1504,7 +1549,7 @@ function Footer() {
     <footer className="border-t border-slate-900 py-6">
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-between gap-3 px-4 text-[11px] text-slate-500 sm:flex-row">
         <div>
-          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —
+          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —{" "}
           Cristian D Toussaint.
         </div>
         <div className="flex items-center gap-4">
