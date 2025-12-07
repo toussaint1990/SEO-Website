@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { loadStripe } from "@stripe/stripe-js";
 
 /* ---------- Stripe Price IDs (real) ---------- */
 
@@ -16,6 +17,9 @@ const BUSINESS_WEBSITE_PRICE_ID_13500 = "price_1SbbXVQYf1I0K9mHg8pur9KX";
 const SUPPORT_PRICE_ID_1800 = "price_1Sbb5lQYf1I0K9mHaKwASDln";
 const SUPPORT_PRICE_ID_3000 = "price_1SbbBtQYf1I0K9mHIvaER9K2";
 const SUPPORT_PRICE_ID_4500 = "price_1SbbBtQYf1I0K9mH74yVtZrs";
+
+// Stripe.js instance (uses your VITE_STRIPE_PUBLISHABLE_KEY)
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function scrollToSection(id) {
   const el = document.getElementById(id);
@@ -76,11 +80,20 @@ export default function App() {
     { id: "contact", label: "Contact" },
   ];
 
-  // Unified Stripe checkout handler
+  // ✅ Unified Stripe checkout handler using Stripe.js redirectToCheckout
   async function handleCheckout(priceId, label) {
     try {
       setCheckoutLoading(true);
       setCheckoutStatus(`Connecting to Stripe for ${label}...`);
+
+      const stripe = await stripePromise;
+      if (!stripe) {
+        setCheckoutStatus(
+          "Stripe could not be loaded. Check your publishable key."
+        );
+        setCheckoutLoading(false);
+        return;
+      }
 
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -98,25 +111,28 @@ export default function App() {
 
       const data = await res.json();
 
-      // Prefer URL if backend returns it
-      if (data.url) {
-        window.location.href = data.url;
+      if (!data.sessionId) {
+        console.error("Missing sessionId in response:", data);
+        setCheckoutStatus("Stripe did not return a checkout session.");
+        setCheckoutLoading(false);
         return;
       }
 
-      // Fallback if backend returns only sessionId (not ideal but works for now)
-      if (data.sessionId) {
-        // NOTE: normally you would use Stripe.js here
-        const fallbackUrl = `https://checkout.stripe.com/c/pay/${data.sessionId}`;
-        window.location.href = fallbackUrl;
-        return;
-      }
+      // 🔁 Correct way: let Stripe.js redirect to Checkout
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId,
+      });
 
-      setCheckoutStatus("Stripe did not return a checkout URL.");
-      setCheckoutLoading(false);
+      if (error) {
+        console.error("Stripe redirect error:", error);
+        setCheckoutStatus(error.message || "Stripe redirect failed.");
+      } else {
+        setCheckoutStatus("");
+      }
     } catch (err) {
       console.error("Checkout error:", err);
       setCheckoutStatus("Unexpected error. Please try again or contact me.");
+    } finally {
       setCheckoutLoading(false);
     }
   }
