@@ -1,42 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { loadStripe } from "@stripe/stripe-js";
 
 function scrollToSection(id) {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth" });
 }
 
-// ---------- Stripe Checkout helper ----------
-async function startCheckout(priceId) {
-  try {
-    const res = await fetch("/api/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceId }),
-    });
-
-    if (!res.ok) {
-      throw new Error("Network error");
-    }
-
-    const data = await res.json();
-
-    if (data.url) {
-      window.location.href = data.url; // Redirect to Stripe Checkout
-    } else {
-      console.error("No checkout URL returned", data);
-      alert("Something went wrong starting checkout.");
-    }
-  } catch (err) {
-    console.error("Checkout error:", err);
-    alert("Something went wrong starting checkout.");
-  }
-}
-
 const sectionTransition = {
   duration: 0.6,
   ease: "easeOut",
 };
+
+/* ---------- Stripe setup ---------- */
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+const STRIPE_CHECKOUT_URL = import.meta.env.PROD
+  ? "/api/create-checkout-session"
+  : "http://localhost:4242/create-checkout-session";
 
 /* ---------- Reusable Spinning World Globe (world map style) ---------- */
 
@@ -59,6 +41,7 @@ export default function App() {
   const [introDone, setIntroDone] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showFab, setShowFab] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
@@ -72,6 +55,68 @@ export default function App() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  /* ---- Stripe price mapping ---- */
+
+  const priceMap = {
+    // Starter – Launch Page (one-time)
+    launch_starter: "price_1SbanBQYf1I0K9mH3pyaR4sH",
+
+    // Growth – Business Website + SEO (one-time tiers)
+    growth_7500: "price_1Sbb2uQYf1I0K9mHRarHYID2",
+    growth_10500: "price_1SbbXVQYf1I0K9mHI4bLUKu9",
+    growth_13500: "price_1SbbXVQYf1I0K9mHg8pur9KX",
+
+    // Ongoing – SEO, Systems & App Support (monthly tiers)
+    seo_1800: "price_1Sbb5lQYf1I0K9mHaKwASDln",
+    seo_3000: "price_1SbbBtQYf1I0K9mHIvaER9K2",
+    seo_4500: "price_1SbbBtQYf1I0K9mH74yVtZrs",
+  };
+
+  async function startCheckout(priceId, metaLabel) {
+    if (!priceId) {
+      alert("No price configured for this package yet.");
+      return;
+    }
+
+    try {
+      setCheckoutLoading(true);
+      const stripe = await stripePromise;
+
+      const res = await fetch(STRIPE_CHECKOUT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId,
+          label: metaLabel,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("Checkout session error:", await res.text());
+        throw new Error("Failed to create checkout session");
+      }
+
+      const data = await res.json();
+      if (!data.sessionId) {
+        throw new Error("Missing sessionId in response");
+      }
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId,
+      });
+
+      if (error) {
+        console.error(error);
+        alert("Stripe checkout error. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong starting checkout.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
 
   const navItems = [
     { id: "services", label: "Services" },
@@ -180,7 +225,50 @@ export default function App() {
         <AISection />
         <Portfolio />
         <Process />
-        <Pricing />
+        <Pricing
+          checkoutLoading={checkoutLoading}
+          onCheckoutStarter={() =>
+            startCheckout(priceMap.launch_starter, "Launch Page")
+          }
+          onCheckoutGrowth={async () => {
+            const choice = (window.prompt(
+              "Choose a Business Website + SEO package:\n" +
+                "1 – Essential ($7,500)\n" +
+                "2 – Mid Package ($10,500)\n" +
+                "3 – Full Package ($13,500)"
+            ) || "").trim();
+
+            let priceId = null;
+            if (choice === "1") priceId = priceMap.growth_7500;
+            else if (choice === "2") priceId = priceMap.growth_10500;
+            else if (choice === "3") priceId = priceMap.growth_13500;
+            else {
+              alert("No package selected.");
+              return;
+            }
+
+            await startCheckout(priceId, "Business Website + SEO");
+          }}
+          onCheckoutSEO={async () => {
+            const choice = (window.prompt(
+              "Choose an SEO, Systems & App Support package (monthly):\n" +
+                "1 – Starter ($1,800 / month)\n" +
+                "2 – Growth ($3,000 / month)\n" +
+                "3 – Scale ($4,500 / month)"
+            ) || "").trim();
+
+            let priceId = null;
+            if (choice === "1") priceId = priceMap.seo_1800;
+            else if (choice === "2") priceId = priceMap.seo_3000;
+            else if (choice === "3") priceId = priceMap.seo_4500;
+            else {
+              alert("No package selected.");
+              return;
+            }
+
+            await startCheckout(priceId, "SEO, Systems & App Support");
+          }}
+        />
         <Testimonials />
         <FAQ />
         <Contact />
@@ -381,7 +469,7 @@ function Hero() {
             </div>
 
             <div className="flex flex-wrap gap-6 text-xs text-slate-400">
-              <Stat label="+3 yrs" sub="Building and optimizing experiences" />
+              <Stat label="+10 yrs" sub="Building and optimizing experiences" />
               <Stat label="Core Web Vitals" sub="Performance-focused builds" />
               <Stat label="Web • Apps • AI" sub="End-to-end systems" />
             </div>
@@ -1059,9 +1147,14 @@ function Process() {
   );
 }
 
-/* ----- Pricing (tripled prices + Stripe checkout) ----- */
+/* ----- Pricing (Stripe checkout wired) ----- */
 
-function Pricing() {
+function Pricing({
+  checkoutLoading,
+  onCheckoutStarter,
+  onCheckoutGrowth,
+  onCheckoutSEO,
+}) {
   return (
     <SectionWrapper
       id="pricing"
@@ -1084,8 +1177,8 @@ function Pricing() {
             "Contact form & thank-you page",
           ]}
           primary={false}
-          // 👉 replace with your real Stripe Price ID
-          priceId="price_STARTER_123"
+          loading={checkoutLoading}
+          onCheckout={onCheckoutStarter}
         />
         <PricingCard
           badge="Most popular"
@@ -1102,8 +1195,8 @@ function Pricing() {
             "Google Analytics / Search Console setup",
           ]}
           primary
-          // 👉 replace with your real Stripe Price ID
-          priceId="price_GROWTH_123"
+          loading={checkoutLoading}
+          onCheckout={onCheckoutGrowth}
         />
         <PricingCard
           badge=""
@@ -1119,8 +1212,8 @@ function Pricing() {
             "Priority support for bug fixes & small features",
           ]}
           primary={false}
-          // 👉 replace with your real Stripe Price ID
-          priceId="price_ONGOING_123"
+          loading={checkoutLoading}
+          onCheckout={onCheckoutSEO}
         />
       </div>
     </SectionWrapper>
@@ -1136,7 +1229,8 @@ function PricingCard({
   description,
   bullets,
   primary,
-  priceId,
+  loading,
+  onCheckout,
 }) {
   return (
     <motion.div
@@ -1167,20 +1261,16 @@ function PricingCard({
         ))}
       </ul>
       <button
-        onClick={() =>
-          priceId ? startCheckout(priceId) : scrollToSection("contact")
-        }
+        type="button"
+        onClick={onCheckout}
+        disabled={loading}
         className={`mt-auto inline-flex w-full justify-center rounded-full py-2 ${
           primary
             ? "bg-primary hover:bg-primaryDark text-slate-950"
             : "border border-slate-700 hover:border-primary text-slate-100"
-        } transition`}
+        } transition disabled:opacity-60 disabled:cursor-not-allowed`}
       >
-        {priceId
-          ? "Secure checkout"
-          : primary
-          ? "Talk about this package"
-          : "Start with this"}
+        {loading ? "Starting checkout..." : "Secure checkout"}
       </button>
     </motion.div>
   );
@@ -1269,7 +1359,7 @@ function FAQ() {
   );
 }
 
-/* ----- Contact (Resend API + map) ----- */
+/* ----- Contact (calls /contact backend for Resend) ----- */
 
 function Contact() {
   const [status, setStatus] = useState("");
@@ -1279,36 +1369,32 @@ function Contact() {
     setStatus("Sending...");
 
     const form = e.target;
-    const formData = new FormData(form);
-    const name = formData.get("name") || "";
-    const email = formData.get("email") || "";
-    const budget = formData.get("budget") || "";
-    const timeline = formData.get("timeline") || "";
-    const message = formData.get("message") || "";
+    const formData = {
+      name: form.name.value,
+      email: form.email.value,
+      budget: form.budget.value,
+      timeline: form.timeline.value,
+      message: form.message.value,
+    };
 
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch("/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          budget,
-          timeline,
-          message,
-        }),
+        body: JSON.stringify(formData),
       });
 
       if (!res.ok) {
-        throw new Error(`Request failed with ${res.status}`);
+        console.error("Contact error:", await res.text());
+        throw new Error("Request failed");
       }
 
       setStatus(
         "Thanks! Your message has been sent. I’ll get back to you as soon as possible."
       );
       form.reset();
-    } catch (error) {
-      console.error("Contact form error:", error);
+    } catch (err) {
+      console.error(err);
       setStatus(
         "Something went wrong. Please email me directly at toussaint.systemdevelopment@gmail.com."
       );
