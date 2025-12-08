@@ -44,6 +44,8 @@ function SpinningGlobe({ sizeClass = "w-16 h-16" }) {
   );
 }
 
+/* ---------- MAIN APP ---------- */
+
 export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [introDone, setIntroDone] = useState(false);
@@ -52,6 +54,7 @@ export default function App() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutStatus, setCheckoutStatus] = useState("");
 
+  // Scroll progress + floating CTA
   useEffect(() => {
     const onScroll = () => {
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
@@ -63,6 +66,16 @@ export default function App() {
     };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Reset Stripe state when coming back from Checkout (fixes second checkout bug)
+  useEffect(() => {
+    const handlePageShow = () => {
+      setCheckoutLoading(false);
+      setCheckoutStatus("");
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
   }, []);
 
   const navItems = [
@@ -120,8 +133,39 @@ export default function App() {
     }
   }
 
+  // JSON-LD structured data for SEO
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Toussaint Digital Developments",
+    alternateName: "Toussaint IT System Development",
+    url: "https://toussaint.systems", // replace with your real domain if different
+    logo: "https://toussaint.systems/og-image.jpg",
+    telephone: "+1-702-888-0772",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "15750 SW 105th Ter",
+      addressLocality: "Miami",
+      addressRegion: "FL",
+      postalCode: "33196",
+      addressCountry: "US",
+    },
+    sameAs: [
+      "https://instagram.com/toussaint.systemdevelopment",
+      // add more when you have them:
+      // "https://www.linkedin.com/...",
+      // "https://github.com/toussaint1990",
+    ],
+  };
+
   return (
     <div className="bg-dark text-slate-100 min-h-screen">
+      {/* SEO Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+
       {/* Scroll progress bar */}
       <div className="fixed top-0 left-0 z-50 h-0.5 w-full bg-slate-900">
         <div
@@ -130,25 +174,46 @@ export default function App() {
         />
       </div>
 
+      {/* Floating side logo badge (bigger, readable, controlled zoom on hover) */}
+      <div className="fixed right-8 top-1/2 -translate-y-1/2 z-40 hidden sm:block">
+        <button
+          onClick={() => scrollToSection("top")}
+          className="group relative flex flex-col items-center"
+          aria-label="Back to top - Toussaint Digital Developments"
+        >
+          <div className="absolute inset-0 rounded-full bg-primary/40 blur-2xl opacity-40 group-hover:opacity-80 transition-opacity" />
+          <div className="relative rounded-full border border-slate-100 bg-black/95 p-2 shadow-2xl shadow-black/70 group-hover:shadow-primary/60 group-hover:border-primary/90 transition-all">
+            <img
+              src="/og-image.jpg"
+              alt="Toussaint Digital Developments logo"
+              className="w-40 h-40 rounded-full object-contain group-hover:scale-150 transition-transform duration-500"
+              style={{ transformOrigin: "center" }}
+            />
+          </div>
+          <span className="mt-2 text-[11px] text-slate-50 bg-black px-3 py-1 rounded-full border border-slate-600 whitespace-nowrap">
+            Toussaint Digital Developments
+          </span>
+        </button>
+      </div>
+
       {/* Navbar */}
       <header className="sticky top-0 z-40 mt-0.5 bg-dark/80 backdrop-blur border-b border-slate-800">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          {/* TOP-LEFT BRAND: SPINNING GLOBE + TEXT */}
           <button
             onClick={() => scrollToSection("top")}
-            className="flex items-center gap-2 group"
+            className="flex items-center gap-3 group"
           >
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-primary/30 blur-md opacity-0 group-hover:opacity-100 transition" />
-              <div className="relative flex items-center justify-center">
-                <SpinningGlobe sizeClass="w-9 h-9" />
-              </div>
+            <div className="relative flex items-center justify-center">
+              <div className="absolute -inset-2 rounded-full bg-primary/30 blur-2xl opacity-70 group-hover:opacity-100 transition-opacity" />
+              <SpinningGlobe sizeClass="w-14 h-14" />
             </div>
             <div className="leading-tight text-left">
-              <div className="font-semibold text-sm sm:text-base">
-                Toussaint IT System Development
+              <div className="font-semibold text-lg">
+                Toussaint Digital Developments
               </div>
               <div className="text-[11px] text-slate-400">
-                Web &amp; App &amp; SEO
+                Web • Apps • SEO • Systems Development
               </div>
             </div>
           </button>
@@ -207,6 +272,7 @@ export default function App() {
         )}
       </header>
 
+      {/* MAIN CONTENT */}
       <main id="top">
         <Hero />
         <Services />
@@ -307,8 +373,7 @@ function IntroOverlay({ onDone }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
         >
-          One studio for{" "}
-          <span className="text-primary">websites</span>,{" "}
+          One studio for <span className="text-primary">websites</span>,{" "}
           <span className="text-accent">apps</span>,{" "}
           <span className="text-primary">SEO</span> &amp;{" "}
           <span className="text-accent">systems</span>.
@@ -371,103 +436,75 @@ function IntroOverlay({ onDone }) {
   );
 }
 
-/* ---------- Hero ---------- */
+/* ---------- Shared Section Wrapper ---------- */
 
-function Hero() {
+function SectionWrapper({ id, title, subtitle, right, children }) {
   return (
-    <section className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/20 via-dark to-dark" />
-      <div className="pointer-events-none absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-accent/20 blur-3xl" />
-
-      <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-24">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={sectionTransition}
-          >
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-ping"></span>
-              <span>
-                Toussaint IT System Development • Web &amp; App &amp; SEO
-              </span>
-            </div>
-
-            <h1 className="mb-4 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-              Modern websites, <span className="text-primary">apps</span>{" "}
-              &amp; <span className="text-accent">systems</span> that perform
-              and rank.
-            </h1>
-
-            <p className="mb-6 max-w-xl text-sm text-slate-300 sm:text-base">
-              I build fast, conversion-focused websites, cross-platform apps,
-              SEO strategies that actually move the needle, and full systems
-              with databases, cloud, and AI workflows. One partner for your
-              whole digital stack.
-            </p>
-
-            <div className="mb-6 flex flex-wrap items-center gap-4">
-              <button
-                onClick={() => scrollToSection("contact")}
-                className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium hover:bg-primaryDark transition shadow-lg shadow-primary/40"
-              >
-                Book a free 20-min call
-              </button>
-              <button
-                onClick={() => scrollToSection("portfolio")}
-                className="inline-flex items-center justify-center rounded-full border border-slate-700 px-4 py-2.5 text-sm font-medium hover:border-primary hover:text-primary transition"
-              >
-                View recent projects
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-6 text-xs text-slate-400">
-              <Stat
-                label="10+ yrs"
-                sub="Building & optimizing experiences"
-              />
-              <Stat label="Core Web Vitals" sub="Performance-focused builds" />
-              <Stat label="Web • Apps • AI" sub="End-to-end systems" />
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-2 text-[11px] text-slate-300">
-              {[
-                "React & Next.js",
-                "React Native / Expo",
-                "Node & APIs",
-                "Postgres / MongoDB",
-                "Vercel / AWS / GCP",
-                "SEO & AI flows",
-              ].map((chip) => (
-                <span
-                  key={chip}
-                  className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...sectionTransition, delay: 0.1 }}
-          >
-            <HeroCard />
-          </motion.div>
+    <motion.section
+      id={id}
+      className="max-w-6xl mx-auto px-4 py-16 border-t border-slate-900"
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={sectionTransition}
+    >
+      <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="mb-2 text-2xl font-semibold sm:text-3xl">{title}</h2>
+          {subtitle && (
+            <p className="max-w-xl text-sm text-slate-300">{subtitle}</p>
+          )}
         </div>
+        {right && <p className="max-w-sm text-xs text-slate-400">{right}</p>}
       </div>
-    </section>
+      {children}
+    </motion.section>
   );
 }
+
+/* ---------- Hero & supporting components ---------- */
 
 function Stat({ label, sub }) {
   return (
     <div>
       <div className="text-base font-semibold text-slate-100">{label}</div>
       <div>{sub}</div>
+    </div>
+  );
+}
+
+function HoverCard({ title, value, sub }) {
+  return (
+    <motion.div
+      className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:-translate-y-2 hover:border-primary/60 hover:bg-slate-900/80 hover:shadow-lg hover:shadow-primary/20"
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+    >
+      <div className="mb-1 text-sm text-slate-400">{title}</div>
+      <div className="text-sm font-medium text-slate-100">{value}</div>
+      <p className="mt-1 text-[11px] text-slate-500">{sub}</p>
+    </motion.div>
+  );
+}
+
+function Bar({ label, value, color = "accent" }) {
+  const colorClass =
+    color === "primary"
+      ? "bg-primary"
+      : color === "neutral"
+      ? "bg-slate-200"
+      : "bg-accent";
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-20 text-slate-300">{label}</span>
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
+        <div
+          className={`h-2 rounded-full ${colorClass}`}
+          style={{ width: `${value}%` }}
+        />
+      </div>
+      <span className="w-10 text-right text-slate-300">{value}</span>
     </div>
   );
 }
@@ -532,67 +569,90 @@ function HeroCard() {
   );
 }
 
-function HoverCard({ title, value, sub }) {
+function Hero() {
   return (
-    <motion.div
-      className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:-translate-y-2 hover:border-primary/60 hover:bg-slate-900/80 hover:shadow-lg hover:shadow-primary/20"
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 260, damping: 20 }}
-    >
-      <div className="mb-1 text-sm text-slate-400">{title}</div>
-      <div className="text-sm font-medium text-slate-100">{value}</div>
-      <p className="mt-1 text-[11px] text-slate-500">{sub}</p>
-    </motion.div>
-  );
-}
+    <section className="relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/20 via-dark to-dark" />
+      <div className="pointer-events-none absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-accent/20 blur-3xl" />
 
-function Bar({ label, value, color = "accent" }) {
-  const colorClass =
-    color === "primary"
-      ? "bg-primary"
-      : color === "neutral"
-      ? "bg-slate-200"
-      : "bg-accent";
+      <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-24">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={sectionTransition}
+          >
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-ping"></span>
+              <span>
+                Toussaint IT System Development • Web &amp; App &amp; SEO
+              </span>
+            </div>
 
-  return (
-    <div className="flex items-center gap-2">
-      <span className="w-20 text-slate-300">{label}</span>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
-        <div
-          className={`h-2 rounded-full ${colorClass}`}
-          style={{ width: `${value}%` }}
-        />
-      </div>
-      <span className="w-10 text-right text-slate-300">{value}</span>
-    </div>
-  );
-}
+            <h1 className="mb-4 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+              Modern websites, <span className="text-primary">apps</span> &amp;{" "}
+              <span className="text-accent">systems</span> that perform and
+              rank.
+            </h1>
 
-/* ----- Shared Section Wrapper ----- */
+            <p className="mb-6 max-w-xl text-sm text-slate-300 sm:text-base">
+              I build fast, conversion-focused websites, cross-platform apps,
+              SEO strategies that actually move the needle, and full systems
+              with databases, cloud, and AI workflows. One partner for your
+              whole digital stack.
+            </p>
 
-function SectionWrapper({ id, title, subtitle, right, children }) {
-  return (
-    <motion.section
-      id={id}
-      className="max-w-6xl mx-auto px-4 py-16 border-t border-slate-900"
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={sectionTransition}
-    >
-      <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="mb-2 text-2xl font-semibold sm:text-3xl">{title}</h2>
-          {subtitle && (
-            <p className="max-w-xl text-sm text-slate-300">{subtitle}</p>
-          )}
+            <div className="mb-6 flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => scrollToSection("contact")}
+                className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium hover:bg-primaryDark transition shadow-lg shadow-primary/40"
+              >
+                Book a free 20-min call
+              </button>
+              <button
+                onClick={() => scrollToSection("portfolio")}
+                className="inline-flex items-center justify-center rounded-full border border-slate-700 px-4 py-2.5 text-sm font-medium hover:border-primary hover:text-primary transition"
+              >
+                View recent projects
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-6 text-xs text-slate-400">
+              <Stat label="10+ yrs" sub="Building & optimizing experiences" />
+              <Stat label="Core Web Vitals" sub="Performance-focused builds" />
+              <Stat label="Web • Apps • AI" sub="End-to-end systems" />
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2 text-[11px] text-slate-300">
+              {[
+                "React & Next.js",
+                "React Native / Expo",
+                "Node & APIs",
+                "Postgres / MongoDB",
+                "Vercel / AWS / GCP",
+                "SEO & AI flows",
+              ].map((chip) => (
+                <span
+                  key={chip}
+                  className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1"
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...sectionTransition, delay: 0.1 }}
+          >
+            <HeroCard />
+          </motion.div>
         </div>
-        {right && (
-          <p className="max-w-sm text-xs text-slate-400">{right}</p>
-        )}
       </div>
-      {children}
-    </motion.section>
+    </section>
   );
 }
 
@@ -1587,7 +1647,7 @@ function Footer() {
     <footer className="border-t border-slate-900 py-6">
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-between gap-3 px-4 text-[11px] text-slate-500 sm:flex-row">
         <div>
-          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —
+          © {year} Toussaint IT System Development · Web &amp; App &amp; SEO —{" "}
           Cristian D Toussaint.
         </div>
         <div className="flex items-center gap-4">
