@@ -174,23 +174,23 @@ export default function App() {
         />
       </div>
 
-      {/* Floating side logo badge (bigger, readable, controlled zoom on hover) */}
-      <div className="fixed right-8 top-1/2 -translate-y-1/2 z-40 hidden sm:block">
+      {/* Floating side logo badge (now also visible on phones & tablets) */}
+      <div className="fixed right-3 bottom-24 z-40 sm:right-8 sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2">
         <button
           onClick={() => scrollToSection("top")}
           className="group relative flex flex-col items-center"
           aria-label="Back to top - Toussaint Digital Developments"
         >
           <div className="absolute inset-0 rounded-full bg-primary/40 blur-2xl opacity-40 group-hover:opacity-80 transition-opacity" />
-          <div className="relative rounded-full border border-slate-100 bg-black/95 p-2 shadow-2xl shadow-black/70 group-hover:shadow-primary/60 group-hover:border-primary/90 transition-all">
+          <div className="relative rounded-full border border-slate-100 bg-black/95 p-1.5 sm:p-2 shadow-2xl shadow-black/70 group-hover:shadow-primary/60 group-hover:border-primary/90 transition-all">
             <img
               src="/og-image.jpg"
               alt="Toussaint Digital Developments logo"
-              className="w-40 h-40 rounded-full object-contain group-hover:scale-150 transition-transform duration-500"
+              className="w-24 h-24 sm:w-40 sm:h-40 rounded-full object-contain group-hover:scale-150 transition-transform duration-500"
               style={{ transformOrigin: "center" }}
             />
           </div>
-          <span className="mt-2 text-[11px] text-slate-50 bg-black px-3 py-1 rounded-full border border-slate-600 whitespace-nowrap">
+          <span className="mt-1 sm:mt-2 text-[10px] sm:text-[11px] text-slate-50 bg-black px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-slate-600 whitespace-nowrap">
             Toussaint Digital Developments
           </span>
         </button>
@@ -1447,7 +1447,7 @@ function FAQ() {
   );
 }
 
-/* ----- Contact (POST to /api/contact, sends to Gmail via backend) ----- */
+/* ----- Contact ----- */
 
 function Contact() {
   const [contactForm, setContactForm] = useState({

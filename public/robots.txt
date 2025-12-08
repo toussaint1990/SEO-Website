@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Your sitemap (live)
+Sitemap: https://www.toussaintdigitaldevelopments.com/sitemap.xml
+
+# Optional protections
+Disallow: /api/
+Disallow: /server/
+Disallow: /internal/
+Disallow: /temp/
+Disallow: /draft/
+
+# Block tracking query parameters from being indexed
+Disallow: /*?*
+Disallow: /*utm_*
+Disallow: /*fbclid=*
