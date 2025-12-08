@@ -102,6 +102,7 @@
     <meta name="author" content="Toussaint Digital Developments" />
 
     <!-- ========== JSON-LD STRUCTURED DATA ========== -->
+
     <!-- 1) WebSite + SearchAction -->
     <script type="application/ld+json">
       {
@@ -188,11 +189,58 @@
         }
       }
     </script>
+
+    <!-- 4) Service catalog schema -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "serviceType": "Web Development & SEO",
+        "provider": {
+          "@type": "LocalBusiness",
+          "name": "Toussaint Digital Developments",
+          "url": "https://www.toussaintdigitaldevelopments.com/"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Miami"
+        },
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Digital Development Services",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Website Development",
+                "description": "High-performance websites built with modern frameworks, SEO, and conversion-focused UI."
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "SEO Optimization",
+                "description": "Complete SEO systems including technical SEO, content optimization, and Google ranking strategies."
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "App Development",
+                "description": "Cross-platform mobile and web app development with React Native and cloud systems."
+              }
+            }
+          ]
+        }
+      }
+    </script>
   </head>
 
   <body>
     <div id="root"></div>
-    <!-- make sure this path matches your entry file -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
