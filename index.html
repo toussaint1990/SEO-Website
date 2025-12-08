@@ -1,152 +1,181 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+  <!-- Required basics -->
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <!-- ========== CORE SEO ========== -->
+  <title>Websites, Apps & SEO Systems | Toussaint Digital Developments</title>
 
-    <!-- Viewport -->
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="Toussaint Digital Developments builds fast websites, cross-platform apps, SEO-optimized digital experiences, and backend systems for small businesses, creators, and service brands."
+  />
 
-    <!-- Basic SEO -->
-    <title>
-      Web Development, Apps, Automation & SEO | Toussaint Digital Developments
-    </title>
+  <!-- One clear canonical URL -->
+  <link rel="canonical" href="https://www.toussaintdigitaldevelopments.com/" />
 
-    <meta
-      name="description"
-      content="Toussaint Digital Developments builds high-performance websites, cross-platform apps, automation workflows and SEO systems for small businesses, creators and product teams."
-    />
+  <!-- Robots -->
+  <meta
+    name="robots"
+    content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1"
+  />
+  <meta name="googlebot" content="index,follow" />
 
-    <!-- You can adjust these keywords over time based on what people search for -->
-    <meta
-      name="keywords"
-      content="web development, website design, react developer, next.js developer, react native apps, automation, systems, SEO consultant, SEO for small business"
-    />
+  <!-- Language / locale -->
+  <meta http-equiv="content-language" content="en" />
 
-    <meta name="author" content="Toussaint Digital Developments" />
-    <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#02617f" />
+  <!-- Favicons (adjust paths to your actual icons if you have them) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#020617" />
 
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://toussaintdigitaldevelopments.com/" />
+  <!-- ========== OPEN GRAPH (FACEBOOK, LINKEDIN, ETC.) ========== -->
+  <meta property="og:type" content="website" />
+  <meta
+    property="og:title"
+    content="Toussaint Digital Developments – Modern Websites, Apps & SEO Systems"
+  />
+  <meta
+    property="og:description"
+    content="Websites that load fast, apps that feel native, and SEO that drives real traffic. One partner for web, apps, search visibility and backend systems."
+  />
+  <meta
+    property="og:url"
+    content="https://www.toussaintdigitaldevelopments.com/"
+  />
+  <meta
+    property="og:site_name"
+    content="Toussaint Digital Developments"
+  />
+  <meta property="og:locale" content="en_US" />
+  <!-- Use your public image path -->
+  <meta
+    property="og:image"
+    content="https://www.toussaintdigitaldevelopments.com/og-image.jpg"
+  />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/jpeg" />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta
-      property="og:url"
-      content="https://toussaintdigitaldevelopments.com/"
-    />
-    <meta
-      property="og:site_name"
-      content="Toussaint Digital Developments"
-    />
-    <meta
-      property="og:title"
-      content="Modern websites, apps & systems that perform and rank."
-    />
-    <meta
-      property="og:description"
-      content="I build fast, conversion-focused websites, cross-platform apps, SEO strategies that move the needle, and full systems with databases, cloud and AI workflows."
-    />
-    <!-- TODO: upload an actual social share image to /public and update this URL -->
-    <meta
-      property="og:image"
-      content="https://toussaintdigitaldevelopments.com/og-image.jpg"
-    />
+  <!-- ========== TWITTER CARD ========== -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta
+    name="twitter:title"
+    content="Toussaint Digital Developments – Modern Websites, Apps & SEO Systems"
+  />
+  <meta
+    name="twitter:description"
+    content="Full-stack digital development: high-performance websites, cross-platform apps, SEO, and backend systems for growing brands."
+  />
+  <meta
+    name="twitter:image"
+    content="https://www.toussaintdigitaldevelopments.com/og-image.jpg"
+  />
+  <!-- <meta name="twitter:site" content="@yourhandle" /> -->
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="Modern websites, apps & systems that perform and rank."
-    />
-    <meta
-      name="twitter:description"
-      content="High-performance web development, apps, automation and SEO by Toussaint Digital Developments."
-    />
-    <meta
-      name="twitter:image"
-      content="https://toussaintdigitaldevelopments.com/og-image.jpg"
-    />
+  <!-- ========== EXTRA SEO GOODIES ========== -->
+  <meta
+    name="keywords"
+    content="web development, SEO, app development, Miami web developer, React developer, Next.js, React Native, small business websites, SEO consultant"
+  />
+  <meta name="author" content="Toussaint Digital Developments" />
 
-    <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Organization",
-            "@id": "https://toussaintdigitaldevelopments.com/#organization",
-            "name": "Toussaint Digital Developments",
-            "url": "https://toussaintdigitaldevelopments.com/",
-            "email": "mailto:toussaint.systemdevelopment@gmail.com",
-            "telephone": "+1-702-888-0772",
-            "logo": "https://toussaintdigitaldevelopments.com/og-image.jpg",
-            "sameAs": []
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://toussaintdigitaldevelopments.com/#website",
-            "url": "https://toussaintdigitaldevelopments.com/",
-            "name": "Toussaint Digital Developments",
-            "description": "Modern websites, apps, automation and SEO systems for small businesses, creators and product teams.",
-            "publisher": {
-              "@id": "https://toussaintdigitaldevelopments.com/#organization"
-            },
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": "https://toussaintdigitaldevelopments.com/?s={search_term_string}",
-              "query-input": "required name=search_term_string"
-            }
-          },
-          {
-            "@type": "Service",
-            "@id": "https://toussaintdigitaldevelopments.com/#web-development-service",
-            "serviceType": "Web Development",
-            "provider": {
-              "@id": "https://toussaintdigitaldevelopments.com/#organization"
-            },
-            "areaServed": {
-              "@type": "Country",
-              "name": "United States"
-            },
-            "description": "Design and development of high-performance marketing sites and landing pages using React, Next.js and modern front-end stacks."
-          },
-          {
-            "@type": "Service",
-            "@id": "https://toussaintdigitaldevelopments.com/#apps-service",
-            "serviceType": "App Development & Systems",
-            "provider": {
-              "@id": "https://toussaintdigitaldevelopments.com/#organization"
-            },
-            "areaServed": {
-              "@type": "Country",
-              "name": "United States"
-            },
-            "description": "Cross-platform apps, automation workflows and connected systems (React Native, Node, APIs, databases and cloud infrastructure)."
-          },
-          {
-            "@type": "Service",
-            "@id": "https://toussaintdigitaldevelopments.com/#seo-service",
-            "serviceType": "SEO & Search Visibility",
-            "provider": {
-              "@id": "https://toussaintdigitaldevelopments.com/#organization"
-            },
-            "areaServed": {
-              "@type": "Country",
-              "name": "United States"
-            },
-            "description": "SEO strategy, on-page optimization, technical SEO and ongoing performance monitoring to improve rankings and organic traffic."
-          }
-        ]
+  <!-- ========== JSON-LD STRUCTURED DATA ========== -->
+  <!-- 1) WebSite + SearchAction -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Toussaint Digital Developments",
+    "url": "https://www.toussaintdigitaldevelopments.com/",
+    "description": "Websites, apps, SEO and backend systems for small businesses, creators and service brands.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Toussaint Digital Developments",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.toussaintdigitaldevelopments.com/og-image.jpg"
       }
-    </script>
-  </head>
+    },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://www.toussaintdigitaldevelopments.com/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+  <!-- 2) LocalBusiness / Service schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Toussaint Digital Developments",
+    "image": "https://www.toussaintdigitaldevelopments.com/og-image.jpg",
+    "@id": "https://www.toussaintdigitaldevelopments.com/#business",
+    "url": "https://www.toussaintdigitaldevelopments.com/",
+    "telephone": "+1-702-888-0772",
+    "email": "toussaint.systemdevelopment@gmail.com",
+    "priceRange": "$$",
+    "description": "Toussaint Digital Developments builds high-performance websites, SEO-optimized landing pages, cross-platform apps and backend systems for small businesses and creators.",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "15750 SW 105th Ter",
+      "addressLocality": "Miami",
+      "addressRegion": "FL",
+      "postalCode": "33196",
+      "addressCountry": "US"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 25.671,
+      "longitude": -80.438
+    },
+    "areaServed": [
+      { "@type": "City", "name": "Miami" },
+      { "@type": "City", "name": "Miami Beach" },
+      { "@type": "City", "name": "Fort Lauderdale" }
+    ],
+    "sameAs": [
+      "https://github.com/toussaint1990"
+    ],
+    "knowsAbout": [
+      "Web development",
+      "React and Next.js",
+      "React Native apps",
+      "Technical SEO",
+      "Local SEO",
+      "Conversion-focused landing pages",
+      "Backend systems and APIs"
+    ]
+  }
+  </script>
+
+  <!-- 3) Organization schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Toussaint Digital Developments",
+    "url": "https://www.toussaintdigitaldevelopments.com",
+    "logo": "https://www.toussaintdigitaldevelopments.com/og-image.jpg",
+    "sameAs": [
+      "https://github.com/toussaint1990"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+1-702-888-0772",
+      "contactType": "sales",
+      "areaServed": "US",
+      "availableLanguage": [
+        "English",
+        "Spanish"
+      ]
+    }
+  }
+  </script>
+</head>
